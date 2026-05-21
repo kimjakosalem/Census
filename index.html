@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Census</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #141720;
+    --bg2: #1a1e2e;
+    --surface: #1f2438;
+    --surface2: #262c42;
+    --surface3: #2d3450;
+    --border: #2e3555;
+    --border2: #3a4168;
+    --text: #e8ecf4;
+    --text2: #9aa3c2;
+    --text3: #5e6a8a;
+    --accent: #4f7ef8;
+    --accent-hover: #3a68e8;
+    --accent-dim: #1e2f5c;
+    --danger: #f87171;
+    --danger-bg: #2a1a1a;
+    --radius: 10px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.35);
+    --shadow-lg: 0 6px 24px rgba(0,0,0,0.5);
+
+    --hallway-c:#fbbf24; --hallway-bg:#2a2000;
+    --pedia-c:#38bdf8;   --pedia-bg:#0a2030;
+    --private-c:#34d399; --private-bg:#052018;
+    --male-c:#818cf8;    --male-bg:#161830;
+    --female-c:#f472b6;  --female-bg:#28102a;
+    --annex-c:#a78bfa;   --annex-bg:#1a1028;
+    --obs-c:#2dd4bf;     --obs-bg:#051f1e;
+    --ob-c:#fb923c;      --ob-bg:#261208;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;color:var(--text)}
+  .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#6d56f8);border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 8px rgba(79,126,248,.4)}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 2s infinite;flex-shrink:0}
+  .status-text{font-size:13px;color:var(--text2)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+  .btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:var(--accent-hover);box-shadow:0 0 0 3px rgba(79,126,248,.25)}
+  .btn-outline{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}.btn-outline:hover{background:var(--surface3)}
+  .btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid #5a2222}.btn-danger:hover{background:#3a1a1a}
+  .btn-green{background:#052e1c;color:#34d399;border:1px solid #0d5c38}.btn-green:hover{background:#07401e}
+  .btn-sm{padding:5px 10px;font-size:13px}
+
+  main{max-width:1440px;margin:0 auto;padding:22px 24px}
+
+  .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow)}
+  .stat-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+  .stat-value{font-size:26px;font-weight:600}
+  .stat-card.total   .stat-value{color:var(--text)}
+  .stat-card.hallway .stat-value{color:var(--hallway-c)}
+  .stat-card.pedia   .stat-value{color:var(--pedia-c)}
+  .stat-card.private .stat-value{color:var(--private-c)}
+  .stat-card.male    .stat-value{color:var(--male-c)}
+  .stat-card.female  .stat-value{color:var(--female-c)}
+  .stat-card.annex   .stat-value{color:var(--annex-c)}
+  .stat-card.obs     .stat-value{color:var(--obs-c)}
+  .stat-card.ob      .stat-value{color:var(--ob-c)}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;flex:1;max-width:300px}
+  .search-box input{border:none;outline:none;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;width:100%}
+  .search-box input::placeholder{color:var(--text3)}
+
+  .filter-tabs{display:flex;gap:5px;flex-wrap:wrap}
+  .tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;letter-spacing:.2px}
+  .tab:hover{border-color:var(--border2);background:var(--surface2)}
+  .tab.active{background:var(--accent);color:white;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,126,248,.2)}
+
+  .ward-section{margin-bottom:28px}
+  .ward-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:8px;margin-bottom:10px;font-weight:700;font-size:13px;letter-spacing:.3px}
+  .ward-header.hallway{background:var(--hallway-bg);color:var(--hallway-c);border-left:3px solid var(--hallway-c)}
+  .ward-header.pedia  {background:var(--pedia-bg);  color:var(--pedia-c);  border-left:3px solid var(--pedia-c)}
+  .ward-header.private{background:var(--private-bg);color:var(--private-c);border-left:3px solid var(--private-c)}
+  .ward-header.male   {background:var(--male-bg);   color:var(--male-c);   border-left:3px solid var(--male-c)}
+  .ward-header.female {background:var(--female-bg); color:var(--female-c); border-left:3px solid var(--female-c)}
+  .ward-header.annex  {background:var(--annex-bg);  color:var(--annex-c);  border-left:3px solid var(--annex-c)}
+  .ward-header.obs    {background:var(--obs-bg);    color:var(--obs-c);    border-left:3px solid var(--obs-c)}
+  .ward-header.ob     {background:var(--ob-bg);     color:var(--ob-c);     border-left:3px solid var(--ob-c)}
+  .ward-count{font-size:12px;font-weight:500;opacity:.7}
+
+  .patients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+  .patient-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:all .15s;cursor:pointer}
+  .patient-card:hover{box-shadow:var(--shadow-lg);border-color:var(--border2);background:var(--surface2);transform:translateY(-1px)}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px}
+  .patient-name{font-size:15px;font-weight:600;line-height:1.3;color:var(--text)}
+  .patient-meta{font-size:12px;color:var(--text3);margin-top:2px}
+  .room-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap;font-family:'DM Mono',monospace;flex-shrink:0}
+  .room-badge.hallway{background:var(--hallway-bg);color:var(--hallway-c);border:1px solid #3a2a00}
+  .room-badge.pedia  {background:var(--pedia-bg);  color:var(--pedia-c);  border:1px solid #0a3050}
+  .room-badge.private{background:var(--private-bg);color:var(--private-c);border:1px solid #093528}
+  .room-badge.male   {background:var(--male-bg);   color:var(--male-c);   border:1px solid #222850}
+  .room-badge.female {background:var(--female-bg); color:var(--female-c); border:1px solid #3c1840}
+  .room-badge.annex  {background:var(--annex-bg);  color:var(--annex-c);  border:1px solid #261840}
+  .room-badge.obs    {background:var(--obs-bg);    color:var(--obs-c);    border:1px solid #083030}
+  .room-badge.ob     {background:var(--ob-bg);     color:var(--ob-c);     border:1px solid #3a1800}
+  .card-field{font-size:13px;color:var(--text2);margin-bottom:5px;display:flex;gap:8px}
+  .field-label{font-weight:700;color:var(--text3);min-width:50px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding-top:2px;flex-shrink:0}
+  .field-value{flex:1;word-break:break-word;line-height:1.45;color:var(--text2)}
+  .card-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;align-items:center}
+  .days-badge{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
+
+  .empty-state{text-align:center;padding:60px 24px;color:var(--text3)}
+  .empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+  .empty-title{font-size:15px;font-weight:500;color:var(--text2);margin-bottom:4px}
+
+  /* Modals */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);border-radius:14px 14px 0 0;z-index:1}
+  .modal-title{font-size:16px;font-weight:600;color:var(--text)}
+  .modal-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .modal-close:hover{background:var(--surface3)}
+  .modal-body{padding:20px 24px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-group.full{grid-column:1/-1}
+  label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+  input,select,textarea{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface2);transition:all .15s;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,126,248,.18);background:var(--surface3)}
+  select option{background:var(--surface2)}
+  textarea{resize:vertical;min-height:68px;line-height:1.5}
+  .modal-footer{display:flex;gap:10px;padding:14px 24px;border-top:1px solid var(--border);justify-content:flex-end;background:var(--bg2);border-radius:0 0 14px 14px}
+
+  .confirm-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:420px;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.6);text-align:center}
+  .confirm-icon{width:56px;height:56px;background:var(--danger-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;border:1px solid #5a2222}
+  .confirm-title{font-size:18px;font-weight:600;margin-bottom:8px}
+  .confirm-text{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
+  .confirm-actions{display:flex;gap:10px;justify-content:center}
+
+  .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-size:14px;gap:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface3);color:var(--text);border:1px solid var(--border2);padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:var(--shadow-lg);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s}
+  .toast.show{transform:translateY(0);opacity:1}
+
+  /* Print preview modal */
+  .print-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:980px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+  .print-modal-body{padding:24px 28px}
+  .print-header-block{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:12px}
+  .print-hospital-name{font-size:18px;font-weight:700}
+  .print-report-title{font-size:13px;color:var(--text2);margin-top:2px}
+  .print-date-block{text-align:right;font-size:13px;color:var(--text2)}
+  .print-summary{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+  .print-sum-item{font-size:13px;color:var(--text2)}
+  .print-section{margin-bottom:22px}
+  .print-ward-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 12px;border-radius:6px;margin-bottom:8px;display:inline-block}
+  .preview-table{width:100%;border-collapse:collapse;font-size:12px}
+  .preview-table th{background:var(--surface3);border:1px solid var(--border2);padding:7px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+  .preview-table td{border:1px solid var(--border);padding:7px 8px;vertical-align:top;line-height:1.4;color:var(--text2)}
+  .preview-table tr:nth-child(even) td{background:var(--surface2)}
+  .print-footer-note{font-size:11px;color:var(--text3);margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
+
+  @media(max-width:900px){.stats-bar{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="main-app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      Hospital Census
+    </div>
+    <div class="header-right">
+      <div class="status-dot" id="conn-dot"></div>
+      <span class="status-text" id="conn-text">Connecting...</span>
+      <button class="btn btn-green btn-sm" onclick="openPrintPreview()">🖨️ Print Endorsement</button>
+      <button class="btn btn-primary" onclick="openAdmitModal()">+ Admit Patient</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-card total">   <div class="stat-label">Total Census</div><div class="stat-value" id="stat-total">—</div></div>
+      <div class="stat-card hallway"> <div class="stat-label">Hallway</div>     <div class="stat-value" id="stat-Hallway">—</div></div>
+      <div class="stat-card pedia">   <div class="stat-label">Pedia</div>       <div class="stat-value" id="stat-Pedia">—</div></div>
+      <div class="stat-card private"> <div class="stat-label">Private</div>     <div class="stat-value" id="stat-Private">—</div></div>
+      <div class="stat-card male">    <div class="stat-label">Male Ward</div>   <div class="stat-value" id="stat-Male">—</div></div>
+      <div class="stat-card female">  <div class="stat-label">Female Ward</div> <div class="stat-value" id="stat-Female">—</div></div>
+      <div class="stat-card annex">   <div class="stat-label">Annex</div>       <div class="stat-value" id="stat-Annex">—</div></div>
+      <div class="stat-card obs">     <div class="stat-label">OBS</div>         <div class="stat-value" id="stat-OBS">—</div></div>
+      <div class="stat-card ob">      <div class="stat-label">OB Ward</div>     <div class="stat-value" id="stat-OB">—</div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div style="display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap">
+        <div class="search-box">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search name, bed, diagnosis..." oninput="renderPatients()">
+        </div>
+        <div class="filter-tabs">
+          <div class="tab active" onclick="setFilter('all',this)">All</div>
+          <div class="tab" onclick="setFilter('Hallway',this)">Hallway</div>
+          <div class="tab" onclick="setFilter('Pedia',this)">Pedia</div>
+          <div class="tab" onclick="setFilter('Private',this)">Private</div>
+          <div class="tab" onclick="setFilter('Male',this)">Male</div>
+          <div class="tab" onclick="setFilter('Female',this)">Female</div>
+          <div class="tab" onclick="setFilter('Annex',this)">Annex</div>
+          <div class="tab" onclick="setFilter('OBS',this)">OBS</div>
+          <div class="tab" onclick="setFilter('OB',this)">OB Ward</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3)" id="last-updated"></div>
+    </div>
+
+    <div id="patients-container">
+      <div class="loading"><div class="spinner"></div> Connecting to live census...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Admit / Edit Modal -->
+<div class="modal-overlay" id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Admit New Patient</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Full Name *</label>
+          <input type="text" id="f-name" placeholder="Last, First MI">
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" id="f-age" placeholder="e.g. 34" min="0" max="150">
+        </div>
+        <div class="form-group">
+          <label>Sex</label>
+          <select id="f-sex">
+            <option value="">Select...</option>
+            <option>Male</option><option>Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date Admitted *</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label>Ward *</label>
+          <select id="f-ward">
+            <option value="">Select ward...</option>
+            <option value="Hallway">Hallway</option>
+            <option value="Pedia">Pedia</option>
+            <option value="Private">Private Room</option>
+            <option value="Male">Male Ward</option>
+            <option value="Female">Female Ward</option>
+            <option value="Annex">Annex</option>
+            <option value="OBS">OBS</option>
+            <option value="OB">OB Ward</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Bed / Room No.</label>
+          <input type="text" id="f-room" placeholder="e.g. Bed 3, Room 201">
+        </div>
+        <div class="form-group full">
+          <label>Signs &amp; Symptoms</label>
+          <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Diagnosis / Assessment</label>
+          <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Lab Results</label>
+          <textarea id="f-labs" placeholder="CBC, chemistry, cultures, imaging..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Medications / Orders</label>
+          <textarea id="f-meds" placeholder="Current medications and standing orders..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Plan</label>
+          <textarea id="f-plan" placeholder="Management plan, referrals, procedures..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Remarks / Notes</label>
+          <textarea id="f-remarks" placeholder="Code status, family contacts, other notes..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePatient()">Save Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- Discharge Confirm Modal -->
+<div class="modal-overlay" id="discharge-modal">
+  <div class="confirm-modal">
+    <div class="confirm-icon">🚪</div>
+    <div class="confirm-title">Discharge Patient?</div>
+    <div class="confirm-text" id="discharge-text">This will permanently remove the patient from the census.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeDischargeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDischarge()">Confirm Discharge</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Preview Modal -->
+<div class="modal-overlay" id="print-modal">
+  <div class="print-modal">
+    <div class="modal-header">
+      <div class="modal-title">🖨️ Endorsement Sheet</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;white-space:nowrap;margin:0;color:var(--text2)">Hospital:</label>
+          <input type="text" id="print-hospital" value="General Hospital" style="width:180px;padding:5px 10px;font-size:13px" oninput="refreshPreview()">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="doPrint()">🖨️ Print Now</button>
+        <button class="modal-close" onclick="closePrintModal()">×</button>
+      </div>
+    </div>
+    <div class="print-modal-body" id="print-preview-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.2/firebase-database-compat.min.js"></script>
+<script>
+
+/* ===== WARD DEFINITIONS ===== */
+const WARDS = [
+  {key:'Hallway', label:'Hallway',      cls:'hallway', c:'#fbbf24', bg:'#2a2000'},
+  {key:'Pedia',   label:'Pedia Ward',   cls:'pedia',   c:'#38bdf8', bg:'#0a2030'},
+  {key:'Private', label:'Private Room', cls:'private', c:'#34d399', bg:'#052018'},
+  {key:'Male',    label:'Male Ward',    cls:'male',    c:'#818cf8', bg:'#161830'},
+  {key:'Female',  label:'Female Ward',  cls:'female',  c:'#f472b6', bg:'#28102a'},
+  {key:'Annex',   label:'Annex',        cls:'annex',   c:'#a78bfa', bg:'#1a1028'},
+  {key:'OBS',     label:'OBS',          cls:'obs',     c:'#2dd4bf', bg:'#051f1e'},
+  {key:'OB',      label:'OB Ward',      cls:'ob',      c:'#fb923c', bg:'#261208'},
+];
+const wardMap = Object.fromEntries(WARDS.map(w => [w.key, w]));
+
+let patients = {}, db = null, currentFilter = 'all', dischargeId = null;
+
+/* ===== FIREBASE — HARDCODED CONFIG ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDpFOquEUS6lix9IhX3KxrjT7jBzVhdwpE",
+  authDomain: "census-a822b.firebaseapp.com",
+  databaseURL: "https://census-a822b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "census-a822b",
+  storageBucket: "census-a822b.firebasestorage.app",
+  messagingSenderId: "682009944155",
+  appId: "1:682009944155:web:13686c286b5a6163215f7e",
+  measurementId: "G-VM0LBRY594"
+};
+
+window.addEventListener('load', () => {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    db.ref('patients').on('value', snap => {
+      patients = snap.val() || {};
+      renderPatients();
+      document.getElementById('last-updated').textContent =
+        'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
+    });
+    db.ref('.info/connected').on('value', snap => {
+      setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
+    });
+  } catch(e) {
+    setConn(false, 'Connection error');
+    showToast('⚠️ Firebase error: ' + e.message);
+  }
+});
+
+function setConn(ok, txt) {
+  document.getElementById('conn-dot').style.background = ok ? '#22c55e' : '#f59e0b';
+  document.getElementById('conn-text').textContent = txt;
+}
+
+/* ===== HELPERS ===== */
+function days(d) { if(!d)return 0; return Math.max(0,Math.floor((Date.now()-new Date(d+'T00:00:00').getTime())/86400000)); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tr(s,n) { return s&&s.length>n?s.substring(0,n)+'…':s; }
+function fmtDate(d) { if(!d)return'—'; try{return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}catch{return d}; }
+function uid() { return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+
+/* ===== FILTER ===== */
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderPatients();
+}
+
+/* ===== RENDER ===== */
+function renderPatients() {
+  const search = (document.getElementById('search-input')?.value||'').toLowerCase();
+  const all = Object.entries(patients).map(([id,p]) => ({...p,id}));
+  const wo = Object.fromEntries(WARDS.map((w,i) => [w.key, i]));
+
+  const filtered = all.filter(p => {
+    const mw = currentFilter==='all' || p.ward===currentFilter;
+    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labs,p.meds,p.remarks,p.plan].some(f=>(f||'').toLowerCase().includes(search));
+    return mw && ms;
+  }).sort((a,b) => {
+    const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
+    return wa!==wb ? wa-wb : (a.room||'').localeCompare(b.room||'');
+  });
+
+  updateStats(all);
+
+  const container = document.getElementById('patients-container');
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🗂️</div>
+      <div class="empty-title">No patients found</div>
+      <div style="font-size:13px;color:var(--text3)">Try a different filter or admit a new patient</div>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  WARDS.forEach(({key,label,cls}) => {
+    const wp = filtered.filter(p => p.ward===key);
+    if (!wp.length) return;
+    html += `<div class="ward-section">
+      <div class="ward-header ${cls}">
+        <span>${label}</span>
+        <span class="ward-count">${wp.length} patient${wp.length!==1?'s':''}</span>
+      </div>
+      <div class="patients-grid">`;
+    wp.forEach(p => {
+      const c = wardMap[p.ward]?.cls || 'hallway';
+      const d = days(p.date);
+      html += `<div class="patient-card" onclick="openEditModal('${p.id}')">
+        <div class="card-top">
+          <div style="min-width:0">
+            <div class="patient-name">${esc(p.name||'Unknown')}</div>
+            <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
+          </div>
+          <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
+        </div>
+        ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(tr(p.ss,100))}</span></div>`:''}
+        ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(tr(p.dx,100))}</span></div>`:''}
+        ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(tr(p.labs,80))}</span></div>`:''}
+        ${p.meds?`<div class="card-field"><span class="field-label">Meds</span><span class="field-value">${esc(tr(p.meds,80))}</span></div>`:''}
+        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(tr(p.plan,80))}</span></div>`:''}
+        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(tr(p.remarks,80))}</span></div>`:''}
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
+          <div class="days-badge">Day ${d}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function updateStats(all) {
+  document.getElementById('stat-total').textContent = all.length;
+  WARDS.forEach(({key}) => {
+    const el = document.getElementById('stat-'+key);
+    if (el) el.textContent = all.filter(p=>p.ward===key).length;
+  });
+}
+
+/* ===== MODALS ===== */
+function openAdmitModal() {
+  document.getElementById('modal-title').textContent = 'Admit New Patient';
+  document.getElementById('edit-id').value = '';
+  clearForm();
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('patient-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
+  document.getElementById('edit-id').value = id;
+  ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+    const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
+  });
+  document.getElementById('patient-modal').classList.add('open');
+}
+
+function clearForm() {
+  ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+    const el = document.getElementById('f-'+f); if(el) el.value='';
+  });
+}
+
+function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
+
+async function savePatient() {
+  const name = document.getElementById('f-name').value.trim();
+  const ward = document.getElementById('f-ward').value;
+  const date = document.getElementById('f-date').value;
+  if (!name||!ward||!date) { alert('Name, Ward, and Date Admitted are required.'); return; }
+  const existingId = document.getElementById('edit-id').value;
+  const id = existingId || uid();
+  const data = {
+    name, ward, date,
+    age: document.getElementById('f-age').value,
+    sex: document.getElementById('f-sex').value,
+    room: document.getElementById('f-room').value.trim(),
+    ss: document.getElementById('f-ss').value.trim(),
+    dx: document.getElementById('f-dx').value.trim(),
+    labs: document.getElementById('f-labs').value.trim(),
+    meds: document.getElementById('f-meds').value.trim(),
+    plan: document.getElementById('f-plan').value.trim(),
+    remarks: document.getElementById('f-remarks').value.trim(),
+    updatedAt: Date.now()
+  };
+  await db.ref('patients/'+id).set(data);
+  closeModal();
+  showToast(existingId ? '✓ Patient updated' : '✓ Patient admitted');
+}
+
+function promptDischarge(id, name) {
+  dischargeId = id;
+  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the census? This cannot be undone.`;
+  document.getElementById('discharge-modal').classList.add('open');
+}
+function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
+async function confirmDischarge() {
+  if (!dischargeId) return;
+  const id = dischargeId; closeDischargeModal();
+  await db.ref('patients/'+id).remove();
+  showToast('Patient discharged');
+}
+
+/* ===== PRINT / ENDORSEMENT ===== */
+function buildPreviewHTML(hospital) {
+  const all = Object.values(patients);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+
+  let html = `<div class="print-header-block">
+    <div>
+      <div class="print-hospital-name">${esc(hospital)}</div>
+      <div class="print-report-title">Nursing Endorsement / Ward Census</div>
+    </div>
+    <div class="print-date-block">
+      <div>${dateStr}</div><div>${timeStr}</div>
+      <div style="margin-top:4px;font-weight:600;color:var(--text)">Total: ${all.length} patients</div>
+    </div>
+  </div>
+  <div class="print-summary">`;
+  WARDS.forEach(({key,label}) => { const n=all.filter(p=>p.ward===key).length; if(n>0) html+=`<div class="print-sum-item">${label}: <strong style="color:var(--text)">${n}</strong></div>`; });
+  html += '</div>';
+
+  WARDS.forEach(({key,label,cls,c,bg}) => {
+    const wp = Object.values(patients).filter(p=>p.ward===key).sort((a,b)=>(a.room||'').localeCompare(b.room||''));
+    if (!wp.length) return;
+    html += `<div class="print-section">
+      <div class="print-ward-label" style="background:${bg};color:${c};border-left:3px solid ${c}">${label} — ${wp.length} patient${wp.length!==1?'s':''}</div>
+      <table class="preview-table"><thead><tr>
+        <th style="width:17%">Patient</th><th style="width:7%">Bed</th><th style="width:7%">Age/Sex</th>
+        <th style="width:8%">Admitted</th><th style="width:17%">Dx / S&S</th>
+        <th style="width:13%">Labs</th><th style="width:14%">Medications</th><th style="width:17%">Plan / Remarks</th>
+      </tr></thead><tbody>`;
+    wp.forEach(p => {
+      html += `<tr>
+        <td><strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}</span></td>
+        <td>${esc(p.room||'—')}</td>
+        <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
+        <td>${fmtDate(p.date)}</td>
+        <td>${p.dx?'<strong style="color:var(--text)">'+esc(p.dx)+'</strong>':''}${p.dx&&p.ss?'<br>':''}${p.ss?'<span style="font-size:11px">'+esc(p.ss)+'</span>':''}</td>
+        <td style="font-size:11px">${esc(p.labs||'—')}</td>
+        <td style="font-size:11px">${esc(p.meds||'—')}</td>
+        <td style="font-size:11px">${p.plan?esc(p.plan):''}${p.plan&&p.remarks?'<br>':''}${p.remarks?'<em>'+esc(p.remarks)+'</em>':''}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+  });
+  html += `<div class="print-footer-note">Endorsed by: __________________________ &nbsp;&nbsp;&nbsp; Time: ____________ &nbsp;&nbsp;&nbsp; Received by: __________________________</div>`;
+  return html;
+}
+
+function openPrintPreview() {
+  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'General Hospital');
+  document.getElementById('print-modal').classList.add('open');
+}
+function refreshPreview() {
+  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'General Hospital');
+}
+function closePrintModal() { document.getElementById('print-modal').classList.remove('open'); }
+
+function doPrint() {
+  const hospital = document.getElementById('print-hospital').value||'General Hospital';
+  const all = Object.values(patients);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+
+  let body = `<div class="header">
+    <div><h1>${esc(hospital)}</h1><div class="sub">Nursing Endorsement / Ward Census</div></div>
+    <div class="date-right">${dateStr}<br>${timeStr}<br><strong>Total: ${all.length} patients</strong></div>
+  </div><div class="summary">`;
+  WARDS.forEach(({key,label}) => { const n=all.filter(p=>p.ward===key).length; if(n>0) body+=`<span>${label}: <strong>${n}</strong></span>`; });
+  body += '</div>';
+
+  WARDS.forEach(({key,label}) => {
+    const wp = Object.values(patients).filter(p=>p.ward===key).sort((a,b)=>(a.room||'').localeCompare(b.room||''));
+    if (!wp.length) return;
+    body += `<div class="ward-title">${label} (${wp.length})</div>
+    <table><thead><tr>
+      <th style="width:17%">Patient</th><th style="width:7%">Bed</th><th style="width:7%">Age/Sex</th>
+      <th style="width:8%">Admitted</th><th style="width:17%">Dx / S&S</th>
+      <th style="width:13%">Labs</th><th style="width:14%">Medications</th><th style="width:17%">Plan / Remarks</th>
+    </tr></thead><tbody>`;
+    wp.forEach(p => {
+      body += `<tr>
+        <td><strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})</td>
+        <td>${esc(p.room||'—')}</td>
+        <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
+        <td>${fmtDate(p.date)}</td>
+        <td>${p.dx?'<strong>'+esc(p.dx)+'</strong>':''}${p.ss?'<br>'+esc(p.ss):''}</td>
+        <td>${esc(p.labs||'—')}</td>
+        <td>${esc(p.meds||'—')}</td>
+        <td>${esc(p.plan||'')}${p.remarks?'<br><em>'+esc(p.remarks)+'</em>':''}</td>
+      </tr>`;
+    });
+    body += '</tbody></table>';
+  });
+  body += `<div class="sig">Endorsed by: __________________________ &nbsp;&nbsp; Time: ____________ &nbsp;&nbsp; Received by: __________________________</div>`;
+
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Endorsement — ${esc(hospital)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:8.5pt;margin:10mm 12mm;color:#000}
+    h1{font-size:13pt;margin:0}.sub{font-size:8.5pt;color:#555}
+    .header{display:flex;justify-content:space-between;border-bottom:2pt solid #000;padding-bottom:7pt;margin-bottom:9pt}
+    .date-right{text-align:right;font-size:8.5pt}
+    .summary{display:flex;gap:14pt;margin-bottom:9pt;flex-wrap:wrap;font-size:8.5pt}
+    .ward-title{font-size:10pt;font-weight:bold;margin:11pt 0 4pt;border-bottom:1pt solid #aaa;padding-bottom:3pt}
+    table{width:100%;border-collapse:collapse;margin-bottom:3pt}
+    th{background:#1a1d23;color:white;padding:4pt 5pt;text-align:left;font-size:7.5pt}
+    td{border:.5pt solid #ccc;padding:4pt 5pt;vertical-align:top;font-size:8pt;line-height:1.4}
+    tr:nth-child(even) td{background:#f5f5f5}
+    .sig{margin-top:14pt;border-top:1pt solid #ccc;padding-top:8pt;font-size:8.5pt}
+    @media print{@page{margin:10mm 12mm;size:landscape}}
+  </style></head><body>${body}</body></html>`);
+  w.document.close(); w.focus();
+  setTimeout(() => w.print(), 600);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
