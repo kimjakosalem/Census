@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hospital Census</title>
+<title>CLLMMH Census</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -46,8 +46,9 @@
   ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
 
   header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;color:var(--text)}
-  .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#6d56f8);border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 8px rgba(79,126,248,.4)}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;line-height:1.2;color:var(--text)}
+  .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#6d56f8);border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 8px rgba(79,126,248,.4);flex-shrink:0}
+  img.logo-icon{background:#fff;object-fit:contain;padding:2px}
   .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .status-dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 2s infinite;flex-shrink:0}
   .status-text{font-size:13px;color:var(--text2)}
@@ -119,6 +120,17 @@
   .card-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;align-items:center}
   .days-badge{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
 
+  /* priority */
+  .patient-card.priority{border-color:#7a2a2a;box-shadow:0 0 0 1px #7a2a2a,var(--shadow)}
+  .priority-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--danger);background:var(--danger-bg);border:1px solid #5a2222;padding:2px 8px;border-radius:10px;margin-top:5px}
+  .switch{position:relative;display:inline-flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .switch .track{width:44px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--border2);transition:all .2s;position:relative;flex-shrink:0}
+  .switch .track::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text2);transition:all .2s}
+  .switch input:checked + .track{background:var(--danger-bg);border-color:#5a2222}
+  .switch input:checked + .track::after{transform:translateX(20px);background:var(--danger)}
+  .switch .switch-label{font-size:14px;color:var(--text)}
+
   .empty-state{text-align:center;padding:60px 24px;color:var(--text3)}
   .empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
   .empty-title{font-size:15px;font-weight:500;color:var(--text2);margin-bottom:4px}
@@ -182,8 +194,8 @@
 <div id="login-screen" style="position:fixed;inset:0;background:var(--bg);z-index:2000;display:none;align-items:center;justify-content:center;padding:24px">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:32px;box-shadow:var(--shadow-lg)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <div class="logo-icon">🏥</div>
-      <div style="font-weight:600;font-size:18px">Hospital Census</div>
+      <img class="logo-icon" src="logo.png" alt="CLLMMH seal">
+      <div style="font-weight:600;font-size:16px;line-height:1.25">Congressman Lamberto L. Macias Hospital Census</div>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Staff sign-in required</div>
     <div class="form-group" style="margin-bottom:14px">
@@ -206,8 +218,8 @@
 <div id="main-app" style="display:none">
   <header>
     <div class="logo">
-      <div class="logo-icon">🏥</div>
-      Hospital Census
+      <img class="logo-icon" src="logo.png" alt="CLLMMH seal">
+      CLLMMH Census
     </div>
     <div class="header-right">
       <div class="status-dot" id="conn-dot"></div>
@@ -308,6 +320,14 @@
           <input type="text" id="f-room" placeholder="e.g. Bed 3, Room 201">
         </div>
         <div class="form-group full">
+          <label>Priority</label>
+          <label class="switch">
+            <input type="checkbox" id="f-priority">
+            <span class="track"></span>
+            <span class="switch-label">⚡ Flag as priority / critical patient</span>
+          </label>
+        </div>
+        <div class="form-group full">
           <label>Signs &amp; Symptoms</label>
           <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
         </div>
@@ -361,7 +381,7 @@
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px">
           <label style="font-size:12px;white-space:nowrap;margin:0;color:var(--text2)">Hospital:</label>
-          <input type="text" id="print-hospital" value="General Hospital" style="width:180px;padding:5px 10px;font-size:13px" oninput="refreshPreview()">
+          <input type="text" id="print-hospital" value="CLLMMH Census" style="width:180px;padding:5px 10px;font-size:13px" oninput="refreshPreview()">
         </div>
         <button class="btn btn-primary btn-sm" onclick="doPrint()">🖨️ Print Now</button>
         <button class="modal-close" onclick="closePrintModal()">×</button>
@@ -509,7 +529,9 @@ function renderPatients() {
     return mw && ms;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
-    return wa!==wb ? wa-wb : (a.room||'').localeCompare(b.room||'');
+    if (wa!==wb) return wa-wb;
+    if (!!b.priority !== !!a.priority) return b.priority ? 1 : -1;  // priority first
+    return (a.room||'').localeCompare(b.room||'');
   });
 
   updateStats(all);
@@ -537,20 +559,21 @@ function renderPatients() {
     wp.forEach(p => {
       const c = wardMap[p.ward]?.cls || 'hallway';
       const d = days(p.date);
-      html += `<div class="patient-card" onclick="openEditModal('${p.id}')">
+      html += `<div class="patient-card${p.priority?' priority':''}" onclick="openEditModal('${p.id}')">
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
             <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
+            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
-        ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(tr(p.ss,100))}</span></div>`:''}
-        ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(tr(p.dx,100))}</span></div>`:''}
-        ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(tr(p.labs,80))}</span></div>`:''}
-        ${p.meds?`<div class="card-field"><span class="field-label">Meds</span><span class="field-value">${esc(tr(p.meds,80))}</span></div>`:''}
-        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(tr(p.plan,80))}</span></div>`:''}
-        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(tr(p.remarks,80))}</span></div>`:''}
+        ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
+        ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
+        ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
+        ${p.meds?`<div class="card-field"><span class="field-label">Meds</span><span class="field-value">${esc(p.meds)}</span></div>`:''}
+        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(p.plan)}</span></div>`:''}
+        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
@@ -587,6 +610,7 @@ function openEditModal(id) {
   ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
+  document.getElementById('f-priority').checked = !!p.priority;
   document.getElementById('patient-modal').classList.add('open');
 }
 
@@ -594,6 +618,7 @@ function clearForm() {
   ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
+  document.getElementById('f-priority').checked = false;
 }
 
 function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
@@ -616,6 +641,7 @@ async function savePatient() {
     meds: document.getElementById('f-meds').value.trim(),
     plan: document.getElementById('f-plan').value.trim(),
     remarks: document.getElementById('f-remarks').value.trim(),
+    priority: document.getElementById('f-priority').checked,
     updatedAt: Date.now()
   };
   await db.ref('patients/'+id).set(data);
@@ -646,7 +672,7 @@ function buildPreviewHTML(hospital) {
   let html = `<div class="print-header-block">
     <div>
       <div class="print-hospital-name">${esc(hospital)}</div>
-      <div class="print-report-title">Nursing Endorsement / Ward Census</div>
+      <div class="print-report-title">ROD Endorsement</div>
     </div>
     <div class="print-date-block">
       <div>${dateStr}</div><div>${timeStr}</div>
@@ -669,7 +695,7 @@ function buildPreviewHTML(hospital) {
       </tr></thead><tbody>`;
     wp.forEach(p => {
       html += `<tr>
-        <td><strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}</span></td>
+        <td>${p.priority?'<span style="color:#f87171;font-weight:800">⚡ </span>':''}<strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}${p.priority?' · PRIORITY':''}</span></td>
         <td>${esc(p.room||'—')}</td>
         <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
@@ -686,23 +712,23 @@ function buildPreviewHTML(hospital) {
 }
 
 function openPrintPreview() {
-  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'General Hospital');
+  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'CLLMMH Census');
   document.getElementById('print-modal').classList.add('open');
 }
 function refreshPreview() {
-  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'General Hospital');
+  document.getElementById('print-preview-body').innerHTML = buildPreviewHTML(document.getElementById('print-hospital').value||'CLLMMH Census');
 }
 function closePrintModal() { document.getElementById('print-modal').classList.remove('open'); }
 
 function doPrint() {
-  const hospital = document.getElementById('print-hospital').value||'General Hospital';
+  const hospital = document.getElementById('print-hospital').value||'CLLMMH Census';
   const all = Object.values(patients);
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const timeStr = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
 
   let body = `<div class="header">
-    <div><h1>${esc(hospital)}</h1><div class="sub">Nursing Endorsement / Ward Census</div></div>
+    <div><h1>${esc(hospital)}</h1><div class="sub">ROD Endorsement</div></div>
     <div class="date-right">${dateStr}<br>${timeStr}<br><strong>Total: ${all.length} patients</strong></div>
   </div><div class="summary">`;
   WARDS.forEach(({key,label}) => { const n=all.filter(p=>p.ward===key).length; if(n>0) body+=`<span>${label}: <strong>${n}</strong></span>`; });
@@ -719,7 +745,7 @@ function doPrint() {
     </tr></thead><tbody>`;
     wp.forEach(p => {
       body += `<tr>
-        <td><strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})</td>
+        <td>${p.priority?'★ ':''}<strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})${p.priority?' — PRIORITY':''}</td>
         <td>${esc(p.room||'—')}</td>
         <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
