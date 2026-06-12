@@ -225,12 +225,14 @@
       <div class="status-dot" id="conn-dot"></div>
       <span class="status-text" id="conn-text">Connecting...</span>
       <button class="btn btn-green btn-sm" onclick="openPrintPreview()">🖨️ Print Endorsement</button>
+      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()">🗄️ Recently Discharged</button>
       <button class="btn btn-primary" onclick="openAdmitModal()">+ Admit Patient</button>
       <button class="btn btn-outline btn-sm" onclick="doLogout()">Sign Out</button>
     </div>
   </header>
 
   <main>
+    <div id="census-view">
     <!-- Stats -->
     <div class="stats-bar">
       <div class="stat-card total">   <div class="stat-label">Total Census</div><div class="stat-value" id="stat-total">—</div></div>
@@ -268,6 +270,23 @@
 
     <div id="patients-container">
       <div class="loading"><div class="spinner"></div> Connecting to live census...</div>
+    </div>
+    </div><!-- /census-view -->
+
+    <!-- Recently Discharged view (toggled) -->
+    <div id="discharged-view" style="display:none">
+      <div class="ward-header" style="background:var(--surface2);color:var(--text2);border-left:3px solid var(--text3);margin-bottom:14px">
+        <span>🗄️ Recently Discharged</span>
+        <span class="ward-count">Auto-deletes 48 hours after discharge</span>
+      </div>
+      <div class="toolbar">
+        <div class="search-box" style="max-width:340px">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="discharged-search" placeholder="Search discharged name, bed, diagnosis..." oninput="renderDischarged()">
+        </div>
+        <div style="font-size:12px;color:var(--text3)" id="discharged-count"></div>
+      </div>
+      <div id="discharged-container"></div>
     </div>
   </main>
 </div>
@@ -413,6 +432,8 @@ const WARDS = [
 const wardMap = Object.fromEntries(WARDS.map(w => [w.key, w]));
 
 let patients = {}, db = null, currentFilter = 'all', dischargeId = null;
+let discharged = {}, showingDischarged = false;
+const RETENTION_MS = 48 * 60 * 60 * 1000;   // discharged patients auto-delete after 48 hours
 
 /* ===== FIREBASE — HARDCODED CONFIG ===== */
 const firebaseConfig = {
@@ -456,9 +477,101 @@ function startCensus() {
     document.getElementById('last-updated').textContent =
       'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
   });
+  db.ref('discharged').on('value', snap => {
+    discharged = snap.val() || {};
+    pruneDischarged();
+    renderDischarged();
+  });
   db.ref('.info/connected').on('value', snap => {
     setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
   });
+  // safety sweep while the app stays open (auto-delete doesn't depend on a server)
+  setInterval(pruneDischarged, 10 * 60 * 1000);
+}
+
+/* ===== RECENTLY DISCHARGED ===== */
+function pruneDischarged() {
+  const now = Date.now();
+  Object.entries(discharged).forEach(([id, p]) => {
+    if (!p.dischargedAt || now - p.dischargedAt > RETENTION_MS) {
+      db.ref('discharged/' + id).remove();
+    }
+  });
+}
+
+function toggleDischargedView() {
+  showingDischarged = !showingDischarged;
+  document.getElementById('census-view').style.display = showingDischarged ? 'none' : '';
+  document.getElementById('discharged-view').style.display = showingDischarged ? '' : 'none';
+  const btn = document.getElementById('discharged-toggle');
+  btn.classList.toggle('btn-primary', showingDischarged);
+  btn.classList.toggle('btn-outline', !showingDischarged);
+  if (showingDischarged) renderDischarged();
+}
+
+function renderDischarged() {
+  const container = document.getElementById('discharged-container');
+  if (!container) return;
+  const search = (document.getElementById('discharged-search')?.value || '').toLowerCase();
+  const all = Object.entries(discharged).map(([id, p]) => ({ ...p, id }))
+    .filter(p => !search || [p.name, p.room, p.dx, p.ss, p.labs, p.meds, p.remarks, p.plan, p.ward]
+      .some(f => (f || '').toLowerCase().includes(search)))
+    .sort((a, b) => (b.dischargedAt || 0) - (a.dischargedAt || 0));  // most recently discharged first
+
+  const totalCount = Object.keys(discharged).length;
+  document.getElementById('discharged-count').textContent =
+    totalCount ? `${totalCount} in holding${search ? ` · ${all.length} match` : ''}` : '';
+
+  if (!all.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🗄️</div>
+      <div class="empty-title">${search ? 'No matching discharged patients' : 'No recently discharged patients'}</div>
+      <div style="font-size:13px;color:var(--text3)">Discharged patients appear here for 48 hours, then auto-delete.</div>
+    </div>`;
+    return;
+  }
+
+  let html = '<div class="patients-grid">';
+  all.forEach(p => {
+    const c = wardMap[p.ward]?.cls || 'hallway';
+    const hrsLeft = Math.max(0, Math.ceil((RETENTION_MS - (Date.now() - (p.dischargedAt || 0))) / 3600000));
+    const when = p.dischargedAt ? new Date(p.dischargedAt).toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    html += `<div class="patient-card" style="cursor:default">
+      <div class="card-top">
+        <div style="min-width:0">
+          <div class="patient-name">${esc(p.name||'Unknown')}</div>
+          <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${wardMap[p.ward]?.label||p.ward||''}</div>
+        </div>
+        <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
+      </div>
+      ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
+      ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
+      <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}</span></div>
+      <div class="card-actions">
+        <button class="btn btn-green btn-sm" onclick="restorePatient('${p.id}')">↩️ Re-admit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDischarged('${p.id}','${esc(p.name||'')}')">🗑️ Delete now</button>
+        <div class="days-badge">auto-deletes in ${hrsLeft}h</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function restorePatient(id) {
+  const p = discharged[id];
+  if (!p) return;
+  const data = { ...p };
+  delete data.dischargedAt;
+  await db.ref('patients/' + id).set(data);
+  await db.ref('discharged/' + id).remove();
+  showToast('↩️ Patient re-admitted');
+}
+
+async function deleteDischarged(id, name) {
+  if (!confirm(`Permanently delete "${name}" from recently discharged? This cannot be undone.`)) return;
+  await db.ref('discharged/' + id).remove();
+  showToast('Record deleted');
 }
 
 function doLogin() {
@@ -651,15 +764,20 @@ async function savePatient() {
 
 function promptDischarge(id, name) {
   dischargeId = id;
-  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the census? This cannot be undone.`;
+  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to Recently Discharged and can be re-admitted there for 48 hours.`;
   document.getElementById('discharge-modal').classList.add('open');
 }
 function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
 async function confirmDischarge() {
   if (!dischargeId) return;
   const id = dischargeId; closeDischargeModal();
+  const p = patients[id];
+  if (p) {
+    // move to the Recently Discharged holding area (auto-deletes after 48h)
+    await db.ref('discharged/'+id).set({ ...p, dischargedAt: Date.now() });
+  }
   await db.ref('patients/'+id).remove();
-  showToast('Patient discharged');
+  showToast('Patient discharged — kept in Recently Discharged for 48h');
 }
 
 /* ===== PRINT / ENDORSEMENT ===== */
