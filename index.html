@@ -178,7 +178,32 @@
 </head>
 <body>
 
-<div id="main-app">
+<!-- Login Screen -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);z-index:2000;display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:32px;box-shadow:var(--shadow-lg)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="logo-icon">🏥</div>
+      <div style="font-weight:600;font-size:18px">Hospital Census</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Staff sign-in required</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@hospital.com" autocomplete="username">
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error" style="display:none;font-size:13px;color:var(--danger);margin-bottom:14px"></div>
+    <div id="login-msg" style="display:none;font-size:13px;color:#34d399;margin-bottom:14px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div style="text-align:center;margin-top:14px">
+      <a href="#" onclick="doReset();return false" style="font-size:13px;color:var(--text2);text-decoration:none">Forgot password?</a>
+    </div>
+  </div>
+</div>
+
+<div id="main-app" style="display:none">
   <header>
     <div class="logo">
       <div class="logo-icon">🏥</div>
@@ -189,6 +214,7 @@
       <span class="status-text" id="conn-text">Connecting...</span>
       <button class="btn btn-green btn-sm" onclick="openPrintPreview()">🖨️ Print Endorsement</button>
       <button class="btn btn-primary" onclick="openAdmitModal()">+ Admit Patient</button>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">Sign Out</button>
     </div>
   </header>
 
@@ -350,6 +376,7 @@
 <!-- Firebase SDKs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.2/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.2/firebase-database-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.2/firebase-auth-compat.min.js"></script>
 <script>
 
 /* ===== WARD DEFINITIONS ===== */
@@ -383,20 +410,72 @@ window.addEventListener('load', () => {
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
-    db.ref('patients').on('value', snap => {
-      patients = snap.val() || {};
-      renderPatients();
-      document.getElementById('last-updated').textContent =
-        'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
-    });
-    db.ref('.info/connected').on('value', snap => {
-      setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = '';
+        startCensus();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'none';
+      }
     });
   } catch(e) {
-    setConn(false, 'Connection error');
     showToast('⚠️ Firebase error: ' + e.message);
   }
 });
+
+/* ===== AUTH-GATED CENSUS SYNC ===== */
+let censusStarted = false;
+function startCensus() {
+  if (censusStarted) return;   // attach listeners only once
+  censusStarted = true;
+  db.ref('patients').on('value', snap => {
+    patients = snap.val() || {};
+    renderPatients();
+    document.getElementById('last-updated').textContent =
+      'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
+  });
+  db.ref('.info/connected').on('value', snap => {
+    setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
+  });
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  err.style.display = 'none';
+  if (!email || !pw) { err.textContent = 'Enter email and password.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  firebase.auth().signInWithEmailAndPassword(email, pw)
+    .catch(e => {
+      const bad = ['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'];
+      err.textContent = bad.includes(e.code) ? 'Incorrect email or password.' : ('Login failed: ' + e.message);
+      err.style.display = 'block';
+    })
+    .finally(() => { btn.disabled = false; btn.textContent = 'Sign In'; });
+}
+
+function doReset() {
+  const email = document.getElementById('login-email').value.trim();
+  const err = document.getElementById('login-error');
+  const msg = document.getElementById('login-msg');
+  err.style.display = 'none'; msg.style.display = 'none';
+  if (!email) { err.textContent = 'Type your email above first, then click "Forgot password?".'; err.style.display = 'block'; return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => { msg.textContent = 'Reset link sent — check your email (including spam).'; msg.style.display = 'block'; })
+    .catch(e => {
+      err.textContent = e.code === 'auth/invalid-email' ? 'That doesn’t look like a valid email.' : ('Could not send reset email: ' + e.message);
+      err.style.display = 'block';
+    });
+}
+
+function doLogout() {
+  document.getElementById('login-password').value = '';
+  firebase.auth().signOut();
+}
 
 function setConn(ok, txt) {
   document.getElementById('conn-dot').style.background = ok ? '#22c55e' : '#f59e0b';
