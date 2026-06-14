@@ -81,6 +81,9 @@
   .search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;flex:1;max-width:300px}
   .search-box input{border:none;outline:none;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;width:100%}
   .search-box input::placeholder{color:var(--text3)}
+  .search-box .clear-btn{display:none;border:none;background:var(--surface3);color:var(--text2);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+  .search-box .clear-btn:hover{background:var(--border2);color:var(--text)}
+  .search-box.has-text .clear-btn{display:inline-flex}
 
   .filter-tabs{display:flex;gap:5px;flex-wrap:wrap}
   .tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;letter-spacing:.2px}
@@ -116,7 +119,7 @@
   .room-badge.ob     {background:var(--ob-bg);     color:var(--ob-c);     border:1px solid #3a1800}
   .card-field{font-size:13px;color:var(--text2);margin-bottom:5px;display:flex;gap:8px}
   .field-label{font-weight:700;color:var(--text3);min-width:50px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding-top:2px;flex-shrink:0}
-  .field-value{flex:1;word-break:break-word;line-height:1.45;color:var(--text2)}
+  .field-value{flex:1;word-break:break-word;line-height:1.45;color:var(--text2);white-space:pre-line}
   .card-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;align-items:center}
   .days-badge{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
 
@@ -130,6 +133,18 @@
   .switch input:checked + .track{background:var(--danger-bg);border-color:#5a2222}
   .switch input:checked + .track::after{transform:translateX(20px);background:var(--danger)}
   .switch .switch-label{font-size:14px;color:var(--text)}
+
+  /* rounds mode */
+  .patient-card.round-pending{border-color:#7a5a1a;box-shadow:0 0 0 1px #7a5a1a,var(--shadow)}
+  .patient-card.round-charted{border-color:#0d5c38;box-shadow:0 0 0 1px #0d5c38,var(--shadow)}
+  .round-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:10px;margin-top:5px}
+  .round-pill.pending{color:#fbbf24;background:#2a2000;border:1px solid #3a2a00}
+  .round-pill.charted{color:#34d399;background:#052e1c;border:1px solid #0d5c38}
+  .pending-block{margin-top:10px;padding:10px 12px;background:#2a2000;border:1px solid #3a2a00;border-radius:8px}
+  .pending-block-title{font-size:10px;font-weight:800;letter-spacing:.4px;color:#fbbf24;text-transform:uppercase;margin-bottom:6px}
+  .pending-block .card-field{color:#e8d9b0}
+  .pending-block .field-label{color:#c9a84a}
+  .round-progress{font-size:13px;color:var(--text2);font-weight:600}
 
   .empty-state{text-align:center;padding:60px 24px;color:var(--text3)}
   .empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
@@ -180,11 +195,28 @@
   .print-ward-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 12px;border-radius:6px;margin-bottom:8px;display:inline-block}
   .preview-table{width:100%;border-collapse:collapse;font-size:12px}
   .preview-table th{background:var(--surface3);border:1px solid var(--border2);padding:7px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
-  .preview-table td{border:1px solid var(--border);padding:7px 8px;vertical-align:top;line-height:1.4;color:var(--text2)}
+  .preview-table td{border:1px solid var(--border);padding:7px 8px;vertical-align:top;line-height:1.4;color:var(--text2);white-space:pre-line}
   .preview-table tr:nth-child(even) td{background:var(--surface2)}
   .print-footer-note{font-size:11px;color:var(--text3);margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
 
+  .btn .btn-label-full{display:inline}
   @media(max-width:900px){.stats-bar{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){
+    header{height:auto;padding:10px 14px;flex-wrap:wrap;gap:8px;align-items:flex-start}
+    .logo{font-size:15px}
+    .logo-icon{width:30px;height:30px}
+    .header-right{width:100%;gap:8px;justify-content:flex-start}
+    .header-right .status-text{display:none}
+    .btn .btn-label-full{display:none}   /* collapse buttons to emoji on phones */
+    .btn{padding:8px 12px}
+    main{padding:16px 12px}
+    .modal-overlay{padding:10px}
+    .modal-header{padding:14px 16px}
+    .modal-body{padding:16px}
+    .modal-footer{padding:12px 16px}
+    .toolbar{gap:8px}
+    .search-box{max-width:none}
+  }
   @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -224,10 +256,11 @@
     <div class="header-right">
       <div class="status-dot" id="conn-dot"></div>
       <span class="status-text" id="conn-text">Connecting...</span>
-      <button class="btn btn-green btn-sm" onclick="openPrintPreview()">🖨️ Print Endorsement</button>
-      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()">🗄️ Recently Discharged</button>
-      <button class="btn btn-primary" onclick="openAdmitModal()">+ Admit Patient</button>
-      <button class="btn btn-outline btn-sm" onclick="doLogout()">Sign Out</button>
+      <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-full"> Print Endorsement</span></button>
+      <button class="btn btn-outline btn-sm" id="rounds-toggle" onclick="toggleRoundsView()" title="Rounds Mode">🩺<span class="btn-label-full"> Rounds</span></button>
+      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Recently Discharged">🗄️<span class="btn-label-full"> Recently Discharged</span></button>
+      <button class="btn btn-primary" onclick="openAdmitModal()" title="Admit Patient">+<span class="btn-label-full"> Admit Patient</span></button>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()" title="Sign Out">🔒<span class="btn-label-full"> Sign Out</span></button>
     </div>
   </header>
 
@@ -251,18 +284,19 @@
       <div style="display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap">
         <div class="search-box">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="search-input" placeholder="Search name, bed, diagnosis..." oninput="renderPatients()">
+          <input type="text" id="search-input" placeholder="Search name, bed, diagnosis..." oninput="onSearchInput('search-input',renderPatients)">
+          <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('search-input',renderPatients)">×</button>
         </div>
         <div class="filter-tabs">
-          <div class="tab active" onclick="setFilter('all',this)">All</div>
-          <div class="tab" onclick="setFilter('Hallway',this)">Hallway</div>
-          <div class="tab" onclick="setFilter('Pedia',this)">Pedia</div>
-          <div class="tab" onclick="setFilter('Private',this)">Private</div>
-          <div class="tab" onclick="setFilter('Male',this)">Male</div>
-          <div class="tab" onclick="setFilter('Female',this)">Female</div>
-          <div class="tab" onclick="setFilter('Annex',this)">Annex</div>
-          <div class="tab" onclick="setFilter('OBS',this)">OBS</div>
-          <div class="tab" onclick="setFilter('OB',this)">OB Ward</div>
+          <div class="tab active" data-w="all" onclick="setFilter('all',this)">All</div>
+          <div class="tab" data-w="Hallway" onclick="setFilter('Hallway',this)">Hallway</div>
+          <div class="tab" data-w="Pedia" onclick="setFilter('Pedia',this)">Pedia</div>
+          <div class="tab" data-w="Private" onclick="setFilter('Private',this)">Private</div>
+          <div class="tab" data-w="Male" onclick="setFilter('Male',this)">Male</div>
+          <div class="tab" data-w="Female" onclick="setFilter('Female',this)">Female</div>
+          <div class="tab" data-w="Annex" onclick="setFilter('Annex',this)">Annex</div>
+          <div class="tab" data-w="OBS" onclick="setFilter('OBS',this)">OBS</div>
+          <div class="tab" data-w="OB" onclick="setFilter('OB',this)">OB Ward</div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text3)" id="last-updated"></div>
@@ -282,11 +316,45 @@
       <div class="toolbar">
         <div class="search-box" style="max-width:340px">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="discharged-search" placeholder="Search discharged name, bed, diagnosis..." oninput="renderDischarged()">
+          <input type="text" id="discharged-search" placeholder="Search discharged name, bed, diagnosis..." oninput="onSearchInput('discharged-search',renderDischarged)">
+          <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('discharged-search',renderDischarged)">×</button>
         </div>
         <div style="font-size:12px;color:var(--text3)" id="discharged-count"></div>
       </div>
       <div id="discharged-container"></div>
+    </div>
+
+    <!-- Rounds view (toggled) -->
+    <div id="rounds-view" style="display:none">
+      <div class="ward-header" style="background:var(--surface2);color:var(--text2);border-left:3px solid var(--accent);margin-bottom:14px">
+        <span>🩺 Rounds Mode</span>
+        <span class="round-progress" id="round-progress"></span>
+      </div>
+      <div class="toolbar">
+        <div style="display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap">
+          <div class="search-box">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="rounds-search" placeholder="Search name, bed, diagnosis..." oninput="onSearchInput('rounds-search',renderRounds)">
+            <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('rounds-search',renderRounds)">×</button>
+          </div>
+          <div class="filter-tabs">
+            <div class="tab active" data-w="all" onclick="setRoundsFilter('all',this)">All</div>
+            <div class="tab" data-w="Hallway" onclick="setRoundsFilter('Hallway',this)">Hallway</div>
+            <div class="tab" data-w="Pedia" onclick="setRoundsFilter('Pedia',this)">Pedia</div>
+            <div class="tab" data-w="Private" onclick="setRoundsFilter('Private',this)">Private</div>
+            <div class="tab" data-w="Male" onclick="setRoundsFilter('Male',this)">Male</div>
+            <div class="tab" data-w="Female" onclick="setRoundsFilter('Female',this)">Female</div>
+            <div class="tab" data-w="Annex" onclick="setRoundsFilter('Annex',this)">Annex</div>
+            <div class="tab" data-w="OBS" onclick="setRoundsFilter('OBS',this)">OBS</div>
+            <div class="tab" data-w="OB" onclick="setRoundsFilter('OB',this)">OB Ward</div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="startNewRound()">🔄 Start New Round</button>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+        Tap a patient to add new findings, transcribe them into IHOMIS, then mark <strong style="color:#34d399">✓ Charted</strong>.
+      </div>
+      <div id="rounds-container"></div>
     </div>
   </main>
 </div>
@@ -392,6 +460,64 @@
   </div>
 </div>
 
+<!-- Rounds Entry Modal -->
+<div class="modal-overlay" id="rounds-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="rounds-modal-title">Rounds Notes</div>
+      <button class="modal-close" onclick="closeRoundsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rounds-id">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Add today's new findings. They stay as <strong style="color:#fbbf24">pending</strong> until you mark the patient charted — then they merge into the record with a date stamp.</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>New Signs &amp; Symptoms</label>
+          <textarea id="r-ss" placeholder="New or changed symptoms noted this round..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>New Diagnosis / Assessment</label>
+          <textarea id="r-dx" placeholder="Refined or new diagnosis..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>New Lab Results</label>
+          <textarea id="r-labs" placeholder="New labs / imaging results..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>New Orders</label>
+          <textarea id="r-orders" placeholder="New orders / medication changes..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>New Plan</label>
+          <textarea id="r-plan" placeholder="Updated management plan, referrals, procedures..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>New Remarks / Notes</label>
+          <textarea id="r-remarks" placeholder="Code status, family updates, other notes..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeRoundsModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRoundsNotes()">Save Notes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Start New Round Modal -->
+<div class="modal-overlay" id="newround-modal">
+  <div class="confirm-modal" style="max-width:460px">
+    <div class="confirm-icon" style="background:var(--accent-dim);border-color:var(--accent)">🔄</div>
+    <div class="confirm-title">Start a New Round?</div>
+    <div class="confirm-text" id="newround-text">This clears all visited/charted flags so you can start fresh.</div>
+    <div class="confirm-actions" style="flex-direction:column">
+      <button class="btn btn-green" style="width:100%;justify-content:center" onclick="startNewRound('chart')" id="newround-chart-btn">✓ Chart remaining pending notes, then reset</button>
+      <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="startNewRound('delete')">🗑️ Discard pending notes &amp; reset</button>
+      <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="closeNewRoundModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Print Preview Modal -->
 <div class="modal-overlay" id="print-modal">
   <div class="print-modal">
@@ -431,8 +557,8 @@ const WARDS = [
 ];
 const wardMap = Object.fromEntries(WARDS.map(w => [w.key, w]));
 
-let patients = {}, db = null, currentFilter = 'all', dischargeId = null;
-let discharged = {}, showingDischarged = false;
+let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null;
+let discharged = {}, showingDischarged = false, showingRounds = false;
 const RETENTION_MS = 48 * 60 * 60 * 1000;   // discharged patients auto-delete after 48 hours
 
 /* ===== FIREBASE — HARDCODED CONFIG ===== */
@@ -474,6 +600,7 @@ function startCensus() {
   db.ref('patients').on('value', snap => {
     patients = snap.val() || {};
     renderPatients();
+    if (showingRounds) renderRounds();
     document.getElementById('last-updated').textContent =
       'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
   });
@@ -499,14 +626,26 @@ function pruneDischarged() {
   });
 }
 
+function setView(view) {   // view = 'census' | 'discharged' | 'rounds'
+  showingDischarged = view === 'discharged';
+  showingRounds = view === 'rounds';
+  document.getElementById('census-view').style.display = view === 'census' ? '' : 'none';
+  document.getElementById('discharged-view').style.display = view === 'discharged' ? '' : 'none';
+  document.getElementById('rounds-view').style.display = view === 'rounds' ? '' : 'none';
+  const dbtn = document.getElementById('discharged-toggle');
+  dbtn.classList.toggle('btn-primary', view === 'discharged');
+  dbtn.classList.toggle('btn-outline', view !== 'discharged');
+  const rbtn = document.getElementById('rounds-toggle');
+  rbtn.classList.toggle('btn-primary', view === 'rounds');
+  rbtn.classList.toggle('btn-outline', view !== 'rounds');
+}
 function toggleDischargedView() {
-  showingDischarged = !showingDischarged;
-  document.getElementById('census-view').style.display = showingDischarged ? 'none' : '';
-  document.getElementById('discharged-view').style.display = showingDischarged ? '' : 'none';
-  const btn = document.getElementById('discharged-toggle');
-  btn.classList.toggle('btn-primary', showingDischarged);
-  btn.classList.toggle('btn-outline', !showingDischarged);
+  setView(showingDischarged ? 'census' : 'discharged');
   if (showingDischarged) renderDischarged();
+}
+function toggleRoundsView() {
+  setView(showingRounds ? 'census' : 'rounds');
+  if (showingRounds) renderRounds();
 }
 
 function renderDischarged() {
@@ -574,6 +713,176 @@ async function deleteDischarged(id, name) {
   showToast('Record deleted');
 }
 
+/* ===== ROUNDS MODE ===== */
+function renderRounds() {
+  const container = document.getElementById('rounds-container');
+  if (!container) return;
+  const search = (document.getElementById('rounds-search')?.value||'').toLowerCase();
+  const all = Object.entries(patients).map(([id,p]) => ({...p,id}));
+  const wo = Object.fromEntries(WARDS.map((w,i) => [w.key, i]));
+
+  // progress counter reflects the whole census, not the current filter/search
+  const total = all.length;
+  const charted = all.filter(p => p.round?.status === 'charted').length;
+  const pending = all.filter(p => p.round?.status === 'pending').length;
+  document.getElementById('round-progress').textContent =
+    total ? `${charted} / ${total} charted · ${pending} pending` : '';
+
+  const filtered = all.filter(p => {
+    const mw = roundsFilter==='all' || p.ward===roundsFilter;
+    const pnd = p.round?.pending || {};
+    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labs,p.meds,p.remarks,p.plan,
+                            pnd.ss,pnd.dx,pnd.labs,pnd.orders,pnd.plan,pnd.remarks]
+      .some(f=>(f||'').toLowerCase().includes(search));
+    return mw && ms;
+  }).sort((a,b) => {
+    const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
+    if (wa!==wb) return wa-wb;
+    if (!!b.priority !== !!a.priority) return b.priority ? 1 : -1;
+    return (a.room||'').localeCompare(b.room||'');
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🩺</div>
+      <div class="empty-title">${total ? 'No patients match' : 'No patients to round on'}</div></div>`;
+    return;
+  }
+
+  let html = '';
+  WARDS.forEach(({key,label,cls}) => {
+    const wp = filtered.filter(p => p.ward===key);
+    if (!wp.length) return;
+    html += `<div class="ward-section">
+      <div class="ward-header ${cls}"><span>${label}</span>
+        <span class="ward-count">${wp.length} patient${wp.length!==1?'s':''}</span></div>
+      <div class="patients-grid">`;
+    wp.forEach(p => {
+      const c = wardMap[p.ward]?.cls || 'hallway';
+      const st = p.round?.status;
+      const cardCls = st === 'pending' ? ' round-pending' : st === 'charted' ? ' round-charted' : '';
+      const pill = st === 'pending' ? '<span class="round-pill pending">🆕 PENDING</span>'
+                 : st === 'charted' ? '<span class="round-pill charted">✓ CHARTED</span>' : '';
+      const pend = p.round?.pending || {};
+      const pendRows = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['orders','Orders'],['plan','Plan'],['remarks','Note']]
+        .map(([k,lbl]) => pend[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(pend[k])}</span></div>` : '').join('');
+      const pendBlock = (st === 'pending' && pendRows)
+        ? `<div class="pending-block"><div class="pending-block-title">🆕 Pending — not yet charted</div>${pendRows}</div>` : '';
+      // full chart shown read-only, like bringing the chart to the bedside
+      const chart = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
+        .map(([k,lbl]) => p[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(p[k])}</span></div>` : '').join('');
+      html += `<div class="patient-card${cardCls}" style="cursor:default">
+        <div class="card-top">
+          <div style="min-width:0">
+            <div class="patient-name">${esc(p.name||'Unknown')}</div>
+            <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
+            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span> ':''}${pill}
+          </div>
+          <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
+        </div>
+        ${chart}
+        ${pendBlock}
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" onclick="openRoundsModal('${p.id}')">➕ ${st==='pending'?'Edit':'Add'} Notes</button>
+          ${st==='pending'?`<button class="btn btn-green btn-sm" onclick="markCharted('${p.id}')">✓ Charted</button>`:''}
+        </div>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function openRoundsModal(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('rounds-id').value = id;
+  document.getElementById('rounds-modal-title').textContent = 'Rounds Notes — ' + (p.name||'');
+  const pend = p.round?.pending || {};
+  document.getElementById('r-ss').value = pend.ss || '';
+  document.getElementById('r-dx').value = pend.dx || '';
+  document.getElementById('r-labs').value = pend.labs || '';
+  document.getElementById('r-orders').value = pend.orders || '';
+  document.getElementById('r-plan').value = pend.plan || '';
+  document.getElementById('r-remarks').value = pend.remarks || '';
+  document.getElementById('rounds-modal').classList.add('open');
+}
+function closeRoundsModal() { document.getElementById('rounds-modal').classList.remove('open'); }
+
+async function saveRoundsNotes() {
+  const id = document.getElementById('rounds-id').value;
+  const p = patients[id]; if (!p) return;
+  const pending = {
+    ss: document.getElementById('r-ss').value.trim(),
+    dx: document.getElementById('r-dx').value.trim(),
+    labs: document.getElementById('r-labs').value.trim(),
+    orders: document.getElementById('r-orders').value.trim(),
+    plan: document.getElementById('r-plan').value.trim(),
+    remarks: document.getElementById('r-remarks').value.trim()
+  };
+  closeRoundsModal();
+  if (!Object.values(pending).some(v => v)) {
+    // nothing entered — clear any pending state back to neutral
+    await db.ref('patients/'+id+'/round').remove();
+    showToast('No notes entered — patient cleared');
+    return;
+  }
+  const round = { status:'pending', pending, visitedAt: Date.now() };
+  if (p.round?.chartedAt) round.chartedAt = p.round.chartedAt;
+  await db.ref('patients/'+id+'/round').set(round);
+  showToast('Notes saved — chart in IHOMIS, then mark Charted');
+}
+
+// merge one patient's pending notes into their record (returns the update object, or null if nothing pending)
+function chartUpdate(p) {
+  const pend = p.round?.pending; if (!pend) return null;
+  return {
+    ss: appendStamped(p.ss, pend.ss),
+    dx: appendStamped(p.dx, pend.dx),
+    labs: appendStamped(p.labs, pend.labs),
+    meds: appendStamped(p.meds, pend.orders),     // Orders merge into Meds/Orders
+    plan: appendStamped(p.plan, pend.plan),
+    remarks: appendStamped(p.remarks, pend.remarks),
+    round: { status:'charted', chartedAt: Date.now() }
+  };
+}
+
+async function markCharted(id) {
+  const p = patients[id]; if (!p || p.round?.status !== 'pending') return;
+  await db.ref('patients/'+id).update(chartUpdate(p));
+  showToast('✓ Charted — merged into record');
+}
+
+/* ===== START NEW ROUND ===== */
+function startNewRound(mode) {
+  const all = Object.entries(patients).map(([id,p]) => ({...p,id}));
+  const pendingCount = all.filter(p => p.round?.status === 'pending').length;
+  if (!mode) {   // first click — open the choice dialog
+    const chartBtn = document.getElementById('newround-chart-btn');
+    document.getElementById('newround-text').innerHTML = pendingCount
+      ? `<strong style="color:#fbbf24">${pendingCount}</strong> patient${pendingCount!==1?'s have':' has'} pending notes not yet charted. What should happen to them before resetting?`
+      : 'No pending notes left. This just clears all charted flags so the next round starts fresh.';
+    chartBtn.style.display = pendingCount ? '' : 'none';
+    document.getElementById('newround-modal').classList.add('open');
+    return;
+  }
+  closeNewRoundModal();
+  runNewRound(mode, all);
+}
+
+async function runNewRound(mode, all) {
+  const ops = all.map(p => {
+    if (mode === 'chart' && p.round?.status === 'pending') {
+      // chart the pending notes first, then drop the round flag entirely
+      return db.ref('patients/'+p.id).update(chartUpdate(p))
+        .then(() => db.ref('patients/'+p.id+'/round').remove());
+    }
+    return db.ref('patients/'+p.id+'/round').remove();
+  });
+  await Promise.all(ops);
+  showToast(mode === 'chart' ? '🔄 Pending notes charted — new round started' : '🔄 New round started — pending notes discarded');
+}
+
+function closeNewRoundModal() { document.getElementById('newround-modal').classList.remove('open'); }
+
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw = document.getElementById('login-password').value;
@@ -622,12 +931,47 @@ function tr(s,n) { return s&&s.length>n?s.substring(0,n)+'…':s; }
 function fmtDate(d) { if(!d)return'—'; try{return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}catch{return d}; }
 function uid() { return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
 
+/* ===== SEARCH CLEAR ===== */
+function onSearchInput(id, renderFn) {
+  const input = document.getElementById(id);
+  if (input) input.closest('.search-box').classList.toggle('has-text', !!input.value);
+  renderFn();
+}
+function clearSearch(id, renderFn) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.value = '';
+  input.closest('.search-box').classList.remove('has-text');
+  renderFn();
+  input.focus();
+}
+
+/* ===== ROUNDS — append a dated note to an existing field ===== */
+function stamp() {
+  return new Date().toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function appendStamped(existing, note) {
+  note = (note||'').trim();
+  if (!note) return existing || '';
+  const line = '— ' + stamp() + ': ' + note;
+  return existing && existing.trim() ? existing.trim() + '\n' + line : line;
+}
+
 /* ===== FILTER ===== */
+function activateTab(scope, f) {
+  scope.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.w === f));
+}
 function setFilter(f, el) {
+  if (f === currentFilter && f !== 'all') f = 'all';   // re-click active ward = back to All
   currentFilter = f;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  activateTab(el.closest('.filter-tabs'), f);
   renderPatients();
+}
+function setRoundsFilter(f, el) {
+  if (f === roundsFilter && f !== 'all') f = 'all';
+  roundsFilter = f;
+  activateTab(el.closest('.filter-tabs'), f);
+  renderRounds();
 }
 
 /* ===== RENDER ===== */
@@ -684,7 +1028,7 @@ function renderPatients() {
         ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
         ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
         ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
-        ${p.meds?`<div class="card-field"><span class="field-label">Meds</span><span class="field-value">${esc(p.meds)}</span></div>`:''}
+        ${p.meds?`<div class="card-field"><span class="field-label">Meds/Ord</span><span class="field-value">${esc(p.meds)}</span></div>`:''}
         ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(p.plan)}</span></div>`:''}
         ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
@@ -809,7 +1153,7 @@ function buildPreviewHTML(hospital) {
       <table class="preview-table"><thead><tr>
         <th style="width:17%">Patient</th><th style="width:7%">Bed</th><th style="width:7%">Age/Sex</th>
         <th style="width:8%">Admitted</th><th style="width:17%">Dx / S&S</th>
-        <th style="width:13%">Labs</th><th style="width:14%">Medications</th><th style="width:17%">Plan / Remarks</th>
+        <th style="width:13%">Labs</th><th style="width:14%">Meds / Orders</th><th style="width:17%">Plan / Remarks</th>
       </tr></thead><tbody>`;
     wp.forEach(p => {
       html += `<tr>
@@ -859,7 +1203,7 @@ function doPrint() {
     <table><thead><tr>
       <th style="width:17%">Patient</th><th style="width:7%">Bed</th><th style="width:7%">Age/Sex</th>
       <th style="width:8%">Admitted</th><th style="width:17%">Dx / S&S</th>
-      <th style="width:13%">Labs</th><th style="width:14%">Medications</th><th style="width:17%">Plan / Remarks</th>
+      <th style="width:13%">Labs</th><th style="width:14%">Meds / Orders</th><th style="width:17%">Plan / Remarks</th>
     </tr></thead><tbody>`;
     wp.forEach(p => {
       body += `<tr>
@@ -888,7 +1232,7 @@ function doPrint() {
     .ward-title{font-size:10pt;font-weight:bold;margin:11pt 0 4pt;border-bottom:1pt solid #aaa;padding-bottom:3pt}
     table{width:100%;border-collapse:collapse;margin-bottom:3pt}
     th{background:#1a1d23;color:white;padding:4pt 5pt;text-align:left;font-size:7.5pt}
-    td{border:.5pt solid #ccc;padding:4pt 5pt;vertical-align:top;font-size:8pt;line-height:1.4}
+    td{border:.5pt solid #ccc;padding:4pt 5pt;vertical-align:top;font-size:8pt;line-height:1.4;white-space:pre-line}
     tr:nth-child(even) td{background:#f5f5f5}
     .sig{margin-top:14pt;border-top:1pt solid #ccc;padding-top:8pt;font-size:8.5pt}
     @media print{@page{margin:10mm 12mm;size:landscape}}
