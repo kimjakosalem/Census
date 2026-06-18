@@ -810,8 +810,7 @@ function closeRoundsModal() { document.getElementById('rounds-modal').classList.
 function copySoap(id) {
   const p = patients[id]; if (!p) return;
   const pend = p.round?.pending || {};
-  const today = new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
-  const lines = ['SOAP NOTE — ' + (p.name||'') + ' — ' + today, ''];
+  const lines = [];
   if (pend.ss)     lines.push('S: ' + pend.ss);
   if (pend.labs)   lines.push('O: ' + pend.labs);
   if (pend.dx)     lines.push('A: ' + pend.dx);
