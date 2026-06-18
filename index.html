@@ -766,7 +766,7 @@ function renderRounds() {
       const pendRows = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['orders','Orders'],['plan','Plan'],['remarks','Note']]
         .map(([k,lbl]) => pend[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(pend[k])}</span></div>` : '').join('');
       const pendBlock = (st === 'pending' && pendRows)
-        ? `<div class="pending-block"><div class="pending-block-title">🆕 Pending — not yet charted</div>${pendRows}</div>` : '';
+        ? `<div class="pending-block"><div class="pending-block-title" style="display:flex;align-items:center;justify-content:space-between">🆕 Pending — not yet charted<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px" onclick="copySoap('${p.id}')">📋 Copy SOAP</button></div>${pendRows}</div>` : '';
       // full chart shown read-only, like bringing the chart to the bedside
       const chart = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
         .map(([k,lbl]) => p[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(p[k])}</span></div>` : '').join('');
@@ -806,6 +806,33 @@ function openRoundsModal(id) {
   document.getElementById('rounds-modal').classList.add('open');
 }
 function closeRoundsModal() { document.getElementById('rounds-modal').classList.remove('open'); }
+
+function copySoap(id) {
+  const p = patients[id]; if (!p) return;
+  const pend = p.round?.pending || {};
+  const today = new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+  const lines = ['SOAP NOTE — ' + (p.name||'') + ' — ' + today, ''];
+  if (pend.ss)     lines.push('S: ' + pend.ss);
+  if (pend.labs)   lines.push('O: ' + pend.labs);
+  if (pend.dx)     lines.push('A: ' + pend.dx);
+  const planParts = [pend.orders, pend.plan].filter(Boolean).join('\n   ');
+  if (planParts)   lines.push('P: ' + planParts);
+  if (pend.remarks) lines.push('\nNotes: ' + pend.remarks);
+  const text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('📋 SOAP note copied — paste into iHOMIS'))
+      .catch(() => fallbackCopy(text));
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); showToast('📋 SOAP note copied — paste into iHOMIS'); }
+  catch(e) { showToast('Copy failed — please copy manually'); }
+  document.body.removeChild(ta);
+}
 
 async function saveRoundsNotes() {
   const id = document.getElementById('rounds-id').value;
@@ -1101,6 +1128,8 @@ async function savePatient() {
     priority: document.getElementById('f-priority').checked,
     updatedAt: Date.now()
   };
+  // Preserve any pending rounds notes so editing outside rounds mode doesn't wipe them
+  if (existingId && patients[existingId]?.round) data.round = patients[existingId].round;
   await db.ref('patients/'+id).set(data);
   closeModal();
   showToast(existingId ? '✓ Patient updated' : '✓ Patient admitted');
