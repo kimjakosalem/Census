@@ -542,6 +542,49 @@
   </div>
 </div>
 
+<!-- Medical Certificate Pre-Print Modal -->
+<div class="modal-overlay" id="medcert-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Medical Certificate — Details</div>
+      <button class="modal-close" onclick="closeMedCertPrompt()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="medcert-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Diagnosis (printed on certificate)</label>
+          <textarea id="mc-dx" placeholder="Diagnosis to state on the certificate..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Rest / Confinement Days</label>
+          <input type="number" id="mc-restdays" min="0" placeholder="e.g. 7">
+        </div>
+        <div class="form-group">
+          <label>Purpose</label>
+          <select id="mc-purpose" onchange="document.getElementById('mc-purpose-other').style.display = this.value==='Other' ? '' : 'none'">
+            <option value="">Select...</option>
+            <option>School</option>
+            <option>Work / Employment</option>
+            <option>Travel</option>
+            <option>Legal</option>
+            <option>Insurance</option>
+            <option>Financial Assistance</option>
+            <option value="Other">Other (specify)</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <input type="text" id="mc-purpose-other" placeholder="Specify purpose..." style="display:none">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeMedCertPrompt()">Cancel</button>
+      <button class="btn btn-primary" onclick="printMedCert()">🖨️ Print Certificate</button>
+    </div>
+  </div>
+</div>
+
 <!-- Discharge Confirm Modal -->
 <div class="modal-overlay" id="discharge-modal">
   <div class="confirm-modal">
@@ -1244,6 +1287,7 @@ function renderPatients() {
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
           <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
+          <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}')">📄 Med Cert</button>
           <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
           <div class="days-badge">Day ${d}</div>
         </div>
@@ -1579,6 +1623,89 @@ async function printAbstract() {
     .abs-sig-name{font-size:10pt;font-weight:bold}
     .abs-sig-title{font-size:8.5pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
     @media print{@page{margin:16mm 18mm;size:portrait}}
+  </style></head><body>${body}</body></html>`);
+  w.document.close(); w.focus();
+  setTimeout(() => w.print(), 600);
+}
+
+/* ===== MEDICAL CERTIFICATE ===== */
+function openMedCertPrompt(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('medcert-id').value = id;
+  document.getElementById('mc-dx').value = p.dx || '';
+  document.getElementById('mc-restdays').value = '';
+  document.getElementById('mc-purpose').value = '';
+  document.getElementById('mc-purpose-other').value = '';
+  document.getElementById('mc-purpose-other').style.display = 'none';
+  document.getElementById('medcert-modal').classList.add('open');
+}
+function closeMedCertPrompt() { document.getElementById('medcert-modal').classList.remove('open'); }
+
+function printMedCert() {
+  const id = document.getElementById('medcert-id').value;
+  const p = patients[id]; if (!p) { closeMedCertPrompt(); return; }
+  const dx = document.getElementById('mc-dx').value.trim();
+  const restDays = document.getElementById('mc-restdays').value.trim();
+  const purposeSelect = document.getElementById('mc-purpose').value;
+  const purpose = purposeSelect === 'Other' ? document.getElementById('mc-purpose-other').value.trim() : purposeSelect;
+  closeMedCertPrompt();
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const logoUrl = new URL('logo.png', location.href).href;
+  const pronoun = p.sex === 'Female' ? 'she' : p.sex === 'Male' ? 'he' : 'the patient';
+
+  const restLine = restDays ? `${pronoun.charAt(0).toUpperCase()+pronoun.slice(1)} is advised to rest for <strong>${esc(restDays)} day${restDays==='1'?'':'s'}</strong> from the date of this certificate.` : '';
+  const purposeLine = purpose ? `This certificate is issued upon the patient's request for <strong>${esc(purpose)}</strong> purposes.` : `This certificate is issued upon the patient's request.`;
+
+  const body = `
+    <div class="abs-header">
+      <img src="${logoUrl}" alt="logo">
+      <div class="abs-header-text">
+        <div class="abs-hospital">Congressman Lamberto L. Macias Memorial Hospital</div>
+        <div class="abs-address">Poblacion III, Siaton, Negros Oriental</div>
+        <div class="abs-sub">Medical Certificate</div>
+      </div>
+      <div class="abs-date">${dateStr}</div>
+    </div>
+    <div class="mc-body">
+      <p>TO WHOM IT MAY CONCERN:</p>
+      <p>This is to certify that <strong>${esc(p.name||'—')}</strong>, ${p.age||'—'} years old, ${esc(p.sex||'—')}, was examined/treated/confined at this hospital${p.date?` since ${fmtDate(p.date)}`:''} with the following diagnosis:</p>
+      <div class="mc-dx-box">${esc(dx || '—')}</div>
+      <p>${restLine}</p>
+      <p>${purposeLine}</p>
+      <p>This certification is issued for whatever purpose it may serve, except for legal purposes.</p>
+    </div>
+    <div class="abs-sig-row" style="justify-content:center">
+      <div class="abs-sig-block" style="max-width:280px">
+        <div class="abs-sig-line"></div>
+        <div class="abs-sig-name">${esc(p.physician || '—')}</div>
+        <div class="abs-sig-title">Attending Physician</div>
+        <div class="mc-cred-line">License No.: _______________</div>
+        <div class="mc-cred-line">PTR No.: _______________</div>
+      </div>
+    </div>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Certificate — ${esc(p.name||'')}</title>
+  <style>
+    body{font-family:Georgia,'Times New Roman',serif;font-size:9pt;margin:10mm 12mm;color:#1a1a1a;line-height:1.45}
+    .abs-header{display:flex;align-items:center;gap:10pt;border-bottom:2pt solid #1a1a1a;padding-bottom:7pt;margin-bottom:10pt}
+    .abs-header img{width:38pt;height:38pt;object-fit:contain;flex-shrink:0}
+    .abs-header-text{flex:1}
+    .abs-hospital{font-size:11.5pt;font-weight:bold;letter-spacing:.2pt}
+    .abs-address{font-size:7.5pt;color:#555;margin-top:1pt}
+    .abs-sub{font-size:8.5pt;color:#444;font-style:italic;margin-top:2pt}
+    .abs-date{font-size:7.5pt;text-align:right;color:#444;white-space:nowrap}
+    .mc-body p{margin-bottom:7pt;font-size:9pt}
+    .mc-dx-box{background:#f7f7f5;border:.75pt solid #ddd;border-radius:4pt;padding:6pt 10pt;margin-bottom:7pt;font-size:9pt;font-weight:bold;white-space:pre-line}
+    .abs-sig-row{margin-top:16pt;display:flex;gap:40pt}
+    .abs-sig-block{flex:1;text-align:center}
+    .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:4pt}
+    .abs-sig-name{font-size:9pt;font-weight:bold}
+    .abs-sig-title{font-size:7.5pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
+    .mc-cred-line{font-size:7.5pt;color:#444;margin-top:4pt}
+    @media print{@page{margin:10mm 12mm;size:A5 landscape}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 600);
