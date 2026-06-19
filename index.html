@@ -120,7 +120,7 @@
   .card-field{font-size:13px;color:var(--text2);margin-bottom:5px;display:flex;gap:8px}
   .field-label{font-weight:700;color:var(--text3);min-width:50px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding-top:2px;flex-shrink:0}
   .field-value{flex:1;word-break:break-word;line-height:1.45;color:var(--text2);white-space:pre-line}
-  .card-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;align-items:center}
+  .card-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;align-items:center;flex-wrap:wrap}
   .days-badge{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
 
   /* priority */
@@ -161,7 +161,11 @@
   .modal-body{padding:20px 24px}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .form-group{display:flex;flex-direction:column;gap:6px}
+  .label-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .label-row label{margin:0}
+  .label-row .btn-sm{padding:2px 8px;font-size:11px}
   .form-group.full{grid-column:1/-1}
+  #history-pe-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
   label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
   input,select,textarea{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface2);transition:all .15s;outline:none}
   input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,126,248,.18);background:var(--surface3)}
@@ -254,6 +258,7 @@
       CLLMMH Census
     </div>
     <div class="header-right">
+      <span class="status-text" id="doctor-name" style="font-weight:600;color:var(--text)"></span>
       <div class="status-dot" id="conn-dot"></div>
       <span class="status-text" id="conn-text">Connecting...</span>
       <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-full"> Print Endorsement</span></button>
@@ -407,6 +412,10 @@
           <input type="text" id="f-room" placeholder="e.g. Bed 3, Room 201">
         </div>
         <div class="form-group full">
+          <label>Admitting Physician</label>
+          <input type="text" id="f-physician" placeholder="e.g. Dr. Juan Dela Cruz">
+        </div>
+        <div class="form-group full">
           <label>Priority</label>
           <label class="switch">
             <input type="checkbox" id="f-priority">
@@ -414,28 +423,54 @@
             <span class="switch-label">⚡ Flag as priority / critical patient</span>
           </label>
         </div>
+        <div id="history-pe-section">
+          <div class="form-group full">
+            <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
+            <textarea id="f-cc" placeholder="Reason for admission, in the patient's own words..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>History of Present Illness (HPI)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-hpi')">📋 Copy</button></div>
+            <textarea id="f-hpi" placeholder="Onset, duration, course, associated symptoms..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Past Medical History (PMH)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-pmh')">📋 Copy</button></div>
+            <textarea id="f-pmh" placeholder="Prior illnesses, hospitalizations, comorbidities..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Personal &amp; Social History (PSH)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-psh')">📋 Copy</button></div>
+            <textarea id="f-psh" placeholder="Smoking, alcohol, occupation, living situation, etc..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Review of Systems (ROS)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ros')">📋 Copy</button></div>
+            <textarea id="f-ros" placeholder="Pertinent positives/negatives by system..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Physical Examination (PE)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-pe')">📋 Copy</button></div>
+            <textarea id="f-pe" placeholder="Findings on physical exam..."></textarea>
+          </div>
+        </div>
         <div class="form-group full">
-          <label>Signs &amp; Symptoms</label>
+          <div class="label-row"><label>Signs &amp; Symptoms</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ss')">📋 Copy</button></div>
           <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
         </div>
         <div class="form-group full">
-          <label>Diagnosis / Assessment</label>
+          <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
           <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
         </div>
         <div class="form-group full">
-          <label>Lab Results</label>
+          <div class="label-row"><label>Lab Results</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labs')">📋 Copy</button></div>
           <textarea id="f-labs" placeholder="CBC, chemistry, cultures, imaging..."></textarea>
         </div>
         <div class="form-group full">
-          <label>Medications / Orders</label>
+          <div class="label-row"><label>Medications / Orders</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-meds')">📋 Copy</button></div>
           <textarea id="f-meds" placeholder="Current medications and standing orders..."></textarea>
         </div>
         <div class="form-group full">
-          <label>Plan</label>
+          <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
           <textarea id="f-plan" placeholder="Management plan, referrals, procedures..."></textarea>
         </div>
         <div class="form-group full">
-          <label>Remarks / Notes</label>
+          <div class="label-row"><label>Remarks / Notes</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-remarks')">📋 Copy</button></div>
           <textarea id="f-remarks" placeholder="Code status, family contacts, other notes..."></textarea>
         </div>
       </div>
@@ -443,6 +478,66 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="savePatient()">Save Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- History & PE View Modal -->
+<div class="modal-overlay" id="history-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="history-modal-title">History &amp; PE</div>
+      <button class="modal-close" onclick="closeHistoryModal()">×</button>
+    </div>
+    <div class="modal-body" id="history-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeHistoryModal()">Close</button>
+      <button class="btn btn-outline" onclick="copyAllHistory()">📋 Copy All</button>
+      <button class="btn btn-primary" onclick="saveHistoryModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Medical Abstract Pre-Print Modal -->
+<div class="modal-overlay" id="abstract-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Medical Abstract — Final Details</div>
+      <button class="modal-close" onclick="closeAbstractPrompt()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="abstract-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Final Diagnosis</label>
+          <textarea id="abs-finaldx" placeholder="Final diagnosis for this abstract..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Disposition</label>
+          <select id="abs-disposition" onchange="document.getElementById('abs-disposition-other').style.display = this.value==='Other' ? '' : 'none'">
+            <option value="">Select...</option>
+            <option>Discharged Improved</option>
+            <option>Discharged Against Medical Advice (HAMA)</option>
+            <option>Transferred to Another Facility</option>
+            <option>Absconded</option>
+            <option>Expired</option>
+            <option value="Other">Other (specify)</option>
+          </select>
+          <input type="text" id="abs-disposition-other" placeholder="Specify disposition..." style="display:none;margin-top:6px">
+        </div>
+        <div class="form-group full">
+          <label>Home Medications</label>
+          <textarea id="abs-homemeds" placeholder="Medications to continue at home..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Special Instructions</label>
+          <textarea id="abs-instructions" placeholder="Follow-up, diet, activity, warning signs to watch for..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAbstractPrompt()">Cancel</button>
+      <button class="btn btn-primary" onclick="printAbstract()">🖨️ Print Abstract</button>
     </div>
   </div>
 </div>
@@ -557,6 +652,19 @@ const WARDS = [
 ];
 const wardMap = Object.fromEntries(WARDS.map(w => [w.key, w]));
 
+/* ===== STAFF DIRECTORY ===== */
+const DOCTOR_MAP = {
+  'kjakosalem@cllmmh.local': 'Dr. Kim Jakosalem',
+  'rjsolde@cllmmh.local': 'Dr. Rober Joseph Solde',
+  'ldbarrantes@cllmmh.local': 'Dr. Lloyd Daniel Barrantes',
+  'qtobate@cllmmh.local': 'Dr. Queen Trisha Obate',
+  'ksragay@cllmmh.local': 'Dr. Katrina Silver Ragay',
+  'mdcbriones@cllmmh.local': 'Dr. Maria Donna Camilla Briones',
+};
+const HOSPITAL_CHIEF = 'Dr. Jenellie Faith B. Ozoa';
+function doctorName(email) { return DOCTOR_MAP[(email||'').toLowerCase()] || email || ''; }
+let currentDoctorName = '';
+
 let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null;
 let discharged = {}, showingDischarged = false, showingRounds = false;
 const RETENTION_MS = 48 * 60 * 60 * 1000;   // discharged patients auto-delete after 48 hours
@@ -579,18 +687,45 @@ window.addEventListener('load', () => {
     db = firebase.database();
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
+        currentDoctorName = doctorName(user.email);
+        document.getElementById('doctor-name').textContent = currentDoctorName;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = '';
         startCensus();
+        startIdleWatch();
       } else {
+        currentDoctorName = '';
+        document.getElementById('doctor-name').textContent = '';
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('main-app').style.display = 'none';
+        stopIdleWatch();
       }
     });
   } catch(e) {
     showToast('⚠️ Firebase error: ' + e.message);
   }
 });
+
+/* ===== IDLE AUTO-LOGOUT (1 hour) ===== */
+let idleTimer = null, idleWatchActive = false;
+const IDLE_LIMIT_MS = 60 * 60 * 1000;
+const IDLE_EVENTS = ['mousemove','keydown','click','touchstart'];
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { doLogout(); showToast('🔒 Signed out — inactive for 1 hour'); }, IDLE_LIMIT_MS);
+}
+function startIdleWatch() {
+  if (idleWatchActive) return;
+  idleWatchActive = true;
+  IDLE_EVENTS.forEach(ev => document.addEventListener(ev, resetIdleTimer));
+  resetIdleTimer();
+}
+function stopIdleWatch() {
+  idleWatchActive = false;
+  IDLE_EVENTS.forEach(ev => document.removeEventListener(ev, resetIdleTimer));
+  clearTimeout(idleTimer);
+  idleTimer = null;
+}
 
 /* ===== AUTH-GATED CENSUS SYNC ===== */
 let censusStarted = false;
@@ -824,13 +959,60 @@ function copySoap(id) {
       .catch(() => fallbackCopy(text));
   } else { fallbackCopy(text); }
 }
-function fallbackCopy(text) {
+function fallbackCopy(text, msg) {
   const ta = document.createElement('textarea');
   ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
   document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); showToast('📋 SOAP note copied — paste into iHOMIS'); }
+  try { document.execCommand('copy'); showToast(msg || '📋 SOAP note copied — paste into iHOMIS'); }
   catch(e) { showToast('Copy failed — please copy manually'); }
   document.body.removeChild(ta);
+}
+
+/* ===== HISTORY & PE VIEW ===== */
+const HISTORY_FIELDS = [['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['ros','ROS'],['pe','PE']];
+
+function openHistoryModal(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('history-modal-title').textContent = 'History & PE — ' + (p.name||'');
+  const body = document.getElementById('history-modal-body');
+  body.innerHTML = `<input type="hidden" id="history-id" value="${esc(id)}">` + HISTORY_FIELDS.map(([k,label]) => `
+    <div class="form-group full" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <label style="margin:0">${label}</label>
+        <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px" onclick="copyHistoryField('hist-${k}')">📋 Copy</button>
+      </div>
+      <textarea id="hist-${k}">${esc(p[k]||'')}</textarea>
+    </div>`).join('');
+  document.getElementById('history-modal').classList.add('open');
+}
+function closeHistoryModal() { document.getElementById('history-modal').classList.remove('open'); }
+
+function copyHistoryField(fieldId) {
+  const text = document.getElementById(fieldId).value || '';
+  const msg = '📋 Copied — paste into iHOMIS';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
+  } else { fallbackCopy(text, msg); }
+}
+
+function copyAllHistory() {
+  const text = HISTORY_FIELDS.map(([k,label]) => {
+    const v = document.getElementById('hist-'+k).value.trim();
+    return v ? (label + ':\n' + v) : '';
+  }).filter(Boolean).join('\n\n');
+  const msg = '📋 All History & PE copied — paste into iHOMIS';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
+  } else { fallbackCopy(text, msg); }
+}
+
+async function saveHistoryModal() {
+  const id = document.getElementById('history-id').value; if (!id) return;
+  const updates = {};
+  HISTORY_FIELDS.forEach(([k]) => { updates[k] = document.getElementById('hist-'+k).value.trim(); });
+  await db.ref('patients/'+id).update(updates);
+  showToast('✓ History & PE updated');
+  closeHistoryModal();
 }
 
 async function saveRoundsNotes() {
@@ -1051,6 +1233,7 @@ function renderPatients() {
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
+        ${p.physician?`<div class="card-field"><span class="field-label">MD</span><span class="field-value">${esc(p.physician)}</span></div>`:''}
         ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
         ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
         ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
@@ -1059,6 +1242,8 @@ function renderPatients() {
         ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
+          <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
           <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
           <div class="days-badge">Day ${d}</div>
         </div>
@@ -1083,6 +1268,8 @@ function openAdmitModal() {
   document.getElementById('edit-id').value = '';
   clearForm();
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-physician').value = currentDoctorName;
+  document.getElementById('history-pe-section').style.display = '';
   document.getElementById('patient-modal').classList.add('open');
 }
 
@@ -1090,15 +1277,16 @@ function openEditModal(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
   document.getElementById('edit-id').value = id;
-  ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','ss','dx','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
   document.getElementById('f-priority').checked = !!p.priority;
+  document.getElementById('history-pe-section').style.display = 'none';
   document.getElementById('patient-modal').classList.add('open');
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','cc','hpi','pmh','psh','ros','pe','ss','dx','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
@@ -1118,6 +1306,7 @@ async function savePatient() {
     age: document.getElementById('f-age').value,
     sex: document.getElementById('f-sex').value,
     room: document.getElementById('f-room').value.trim(),
+    physician: document.getElementById('f-physician').value.trim(),
     ss: document.getElementById('f-ss').value.trim(),
     dx: document.getElementById('f-dx').value.trim(),
     labs: document.getElementById('f-labs').value.trim(),
@@ -1129,6 +1318,13 @@ async function savePatient() {
   };
   // Preserve any pending rounds notes so editing outside rounds mode doesn't wipe them
   if (existingId && patients[existingId]?.round) data.round = patients[existingId].round;
+  // History & PE is captured once at admission; the edit form never shows/touches it — carry it forward
+  if (!existingId) {
+    ['cc','hpi','pmh','psh','ros','pe'].forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
+  } else {
+    const old = patients[existingId] || {};
+    ['cc','hpi','pmh','psh','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
+  }
   await db.ref('patients/'+id).set(data);
   closeModal();
   showToast(existingId ? '✓ Patient updated' : '✓ Patient admitted');
@@ -1264,6 +1460,125 @@ function doPrint() {
     tr:nth-child(even) td{background:#f5f5f5}
     .sig{margin-top:14pt;border-top:1pt solid #ccc;padding-top:8pt;font-size:8.5pt}
     @media print{@page{margin:10mm 12mm;size:landscape}}
+  </style></head><body>${body}</body></html>`);
+  w.document.close(); w.focus();
+  setTimeout(() => w.print(), 600);
+}
+
+/* ===== MEDICAL ABSTRACT ===== */
+const DISPOSITION_OPTIONS = ['Discharged Improved','Discharged Against Medical Advice (HAMA)','Transferred to Another Facility','Absconded','Expired'];
+
+function openAbstractPrompt(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('abstract-id').value = id;
+  document.getElementById('abs-finaldx').value = p.finalDx || '';
+  const dispSelect = document.getElementById('abs-disposition');
+  const dispOther = document.getElementById('abs-disposition-other');
+  if (p.disposition && DISPOSITION_OPTIONS.includes(p.disposition)) {
+    dispSelect.value = p.disposition; dispOther.style.display = 'none'; dispOther.value = '';
+  } else if (p.disposition) {
+    dispSelect.value = 'Other'; dispOther.style.display = ''; dispOther.value = p.disposition;
+  } else {
+    dispSelect.value = ''; dispOther.style.display = 'none'; dispOther.value = '';
+  }
+  document.getElementById('abs-homemeds').value = p.homeMeds || '';
+  document.getElementById('abs-instructions').value = p.specialInstructions || '';
+  document.getElementById('abstract-modal').classList.add('open');
+}
+function closeAbstractPrompt() { document.getElementById('abstract-modal').classList.remove('open'); }
+
+async function printAbstract() {
+  const id = document.getElementById('abstract-id').value;
+  const p = patients[id]; if (!p) { closeAbstractPrompt(); return; }
+  const finalDx = document.getElementById('abs-finaldx').value.trim();
+  const dispSelect = document.getElementById('abs-disposition').value;
+  const disposition = dispSelect === 'Other' ? document.getElementById('abs-disposition-other').value.trim() : dispSelect;
+  const homeMeds = document.getElementById('abs-homemeds').value.trim();
+  const specialInstructions = document.getElementById('abs-instructions').value.trim();
+  closeAbstractPrompt();
+
+  // Save so the next time this abstract is opened, the entered details are still there
+  await db.ref('patients/'+id).update({ finalDx, disposition, homeMeds, specialInstructions });
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const logoUrl = new URL('logo.png', location.href).href;
+
+  const histRows = HISTORY_FIELDS.map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
+  const chartRows = [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+    .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
+
+  const body = `
+    <div class="abs-header">
+      <img src="${logoUrl}" alt="logo">
+      <div class="abs-header-text">
+        <div class="abs-hospital">Congressman Lamberto L. Macias Memorial Hospital</div>
+        <div class="abs-address">Poblacion III, Siaton, Negros Oriental</div>
+        <div class="abs-sub">Medical Abstract</div>
+      </div>
+      <div class="abs-date">${dateStr}</div>
+    </div>
+    <div class="abs-demo">
+      <div class="abs-demo-name">${esc(p.name||'—')}</div>
+      <div class="abs-demo-grid">
+        <div><span class="abs-demo-label">Age/Sex</span>${p.age||'—'} y/o ${esc(p.sex||'—')}</div>
+        <div><span class="abs-demo-label">Ward</span>${esc(wardMap[p.ward]?.label||p.ward||'—')}</div>
+        <div><span class="abs-demo-label">Bed</span>${esc(p.room||'—')}</div>
+        <div><span class="abs-demo-label">Date Admitted</span>${fmtDate(p.date)}</div>
+        <div><span class="abs-demo-label">Length of Stay</span>Day ${days(p.date)}</div>
+      </div>
+    </div>
+    <div class="abs-section-title">History &amp; Physical Examination</div>
+    <div class="abs-section-box">${histRows || '<div class="abs-empty">Not recorded.</div>'}</div>
+    <div class="abs-section-title">Clinical Chart</div>
+    <div class="abs-section-box">${chartRows}</div>
+    ${(finalDx || disposition || homeMeds || specialInstructions) ? `<div class="abs-section-title">Final Assessment</div><div class="abs-section-box">
+    ${finalDx ? `<div class="abs-field"><div class="abs-label">Final Diagnosis</div><div class="abs-value">${esc(finalDx)}</div></div>` : ''}
+    ${disposition ? `<div class="abs-field"><div class="abs-label">Disposition</div><div class="abs-value">${esc(disposition)}</div></div>` : ''}
+    ${homeMeds ? `<div class="abs-field"><div class="abs-label">Home Medications</div><div class="abs-value">${esc(homeMeds)}</div></div>` : ''}
+    ${specialInstructions ? `<div class="abs-field"><div class="abs-label">Special Instructions</div><div class="abs-value">${esc(specialInstructions)}</div></div>` : ''}
+    </div>` : ''}
+    <div class="abs-sig-row">
+      <div class="abs-sig-block">
+        <div class="abs-sig-line"></div>
+        <div class="abs-sig-name">${esc(p.physician || '—')}</div>
+        <div class="abs-sig-title">Admitting Physician</div>
+      </div>
+      <div class="abs-sig-block">
+        <div class="abs-sig-line"></div>
+        <div class="abs-sig-name">${esc(HOSPITAL_CHIEF)}</div>
+        <div class="abs-sig-title">Hospital Chief</div>
+      </div>
+    </div>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Abstract — ${esc(p.name||'')}</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;margin:16mm 18mm;color:#1a1a1a;line-height:1.5}
+    .abs-header{display:flex;align-items:center;gap:14pt;border-bottom:2.5pt solid #1a1a1a;padding-bottom:12pt;margin-bottom:16pt}
+    .abs-header img{width:50pt;height:50pt;object-fit:contain;flex-shrink:0}
+    .abs-header-text{flex:1}
+    .abs-hospital{font-size:14.5pt;font-weight:bold;letter-spacing:.2pt}
+    .abs-address{font-size:9pt;color:#555;margin-top:1pt}
+    .abs-sub{font-size:10pt;color:#444;font-style:italic;margin-top:3pt}
+    .abs-date{font-size:9pt;text-align:right;color:#444;white-space:nowrap}
+    .abs-demo{background:#f7f7f5;border:.75pt solid #ddd;border-radius:4pt;padding:10pt 14pt;margin-bottom:16pt}
+    .abs-demo-name{font-size:12.5pt;font-weight:bold;margin-bottom:6pt}
+    .abs-demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6pt 10pt;font-size:9.5pt}
+    .abs-demo-label{display:block;font-size:7.5pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#777}
+    .abs-section-title{font-size:11pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#1a1a1a;border-bottom:1pt solid #1a1a1a;margin:16pt 0 8pt;padding-bottom:4pt}
+    .abs-section-box{padding-left:2pt}
+    .abs-field{margin-bottom:9pt}
+    .abs-label{font-size:8.5pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#555;margin-bottom:1pt}
+    .abs-value{font-size:9.8pt;line-height:1.55;white-space:pre-line}
+    .abs-empty{font-size:9.5pt;color:#888;font-style:italic}
+    .abs-sig-row{margin-top:34pt;display:flex;gap:40pt}
+    .abs-sig-block{flex:1;text-align:center}
+    .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:5pt}
+    .abs-sig-name{font-size:10pt;font-weight:bold}
+    .abs-sig-title{font-size:8.5pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
+    @media print{@page{margin:16mm 18mm;size:portrait}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 600);
