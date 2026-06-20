@@ -425,6 +425,10 @@
         </div>
         <div id="history-pe-section">
           <div class="form-group full">
+            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
+            <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
+          </div>
+          <div class="form-group full">
             <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
             <textarea id="f-cc" placeholder="Reason for admission, in the patient's own words..."></textarea>
           </div>
@@ -616,7 +620,25 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeReferPrompt()">Cancel</button>
-      <button class="btn btn-primary" onclick="copyReferral()">📋 Copy Case Summary</button>
+      <button class="btn btn-primary" onclick="buildReferralPreview()">👁️ Preview Case Summary</button>
+    </div>
+  </div>
+</div>
+
+<!-- e-Referral Case Summary Preview Modal -->
+<div class="modal-overlay" id="refer-preview-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title">Case Summary Preview</div>
+      <button class="modal-close" onclick="closeReferPreview()">×</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="refer-preview-text" style="width:100%;min-height:440px;font-family:'DM Mono',monospace;font-size:13px;line-height:1.6;white-space:pre-wrap;letter-spacing:.2px"></textarea>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">You can edit this text before copying it.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeReferPreview()">Close</button>
+      <button class="btn btn-primary" onclick="copyReferralPreview()">📋 Copy Case Summary</button>
     </div>
   </div>
 </div>
@@ -654,8 +676,8 @@
           <textarea id="r-ss" placeholder="New or changed symptoms noted this round..."></textarea>
         </div>
         <div class="form-group full">
-          <label>New Diagnosis / Assessment</label>
-          <textarea id="r-dx" placeholder="Refined or new diagnosis..."></textarea>
+          <label>Working Diagnosis / Assessment</label>
+          <textarea id="r-dx" placeholder="Current working diagnosis — pre-filled with the existing one, edit and save to update it"></textarea>
         </div>
         <div class="form-group full">
           <label>New Lab Results</label>
@@ -1016,7 +1038,9 @@ function openRoundsModal(id) {
   document.getElementById('rounds-modal-title').textContent = 'Rounds Notes — ' + (p.name||'');
   const pend = p.round?.pending || {};
   document.getElementById('r-ss').value = pend.ss || '';
-  document.getElementById('r-dx').value = pend.dx || '';
+  // Diagnosis/Assessment is a running working dx, not an append log — default to the current
+  // value (or the in-progress pending edit, or the admitting dx if nothing's been set yet)
+  document.getElementById('r-dx').value = pend.dx || p.dx || p.admDx || '';
   document.getElementById('r-labs').value = pend.labs || '';
   document.getElementById('r-orders').value = pend.orders || '';
   document.getElementById('r-plan').value = pend.plan || '';
@@ -1052,7 +1076,7 @@ function fallbackCopy(text, msg) {
 }
 
 /* ===== HISTORY & PE VIEW ===== */
-const HISTORY_FIELDS = [['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['ros','ROS'],['pe','PE']];
+const HISTORY_FIELDS = [['admDx','Admitting Diagnosis'],['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['ros','ROS'],['pe','PE']];
 
 function openHistoryModal(id) {
   const p = patients[id]; if (!p) return;
@@ -1127,7 +1151,7 @@ function chartUpdate(p) {
   const pend = p.round?.pending; if (!pend) return null;
   return {
     ss: appendStamped(p.ss, pend.ss),
-    dx: appendStamped(p.dx, pend.dx),
+    dx: pend.dx ? pend.dx.trim() : (p.dx || ''),   // working dx is replaced in place, not appended/dated
     labs: appendStamped(p.labs, pend.labs),
     meds: appendStamped(p.meds, pend.orders),     // Orders merge into Meds/Orders
     plan: appendStamped(p.plan, pend.plan),
@@ -1380,7 +1404,7 @@ function openEditModal(id) {
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','physician','cc','hpi','pmh','psh','ros','pe','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','ss','dx','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
@@ -1414,10 +1438,10 @@ async function savePatient() {
   if (existingId && patients[existingId]?.round) data.round = patients[existingId].round;
   // History & PE is captured once at admission; the edit form never shows/touches it — carry it forward
   if (!existingId) {
-    ['cc','hpi','pmh','psh','ros','pe'].forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
+    ['admDx','cc','hpi','pmh','psh','ros','pe'].forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
   } else {
     const old = patients[existingId] || {};
-    ['cc','hpi','pmh','psh','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
+    ['admDx','cc','hpi','pmh','psh','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
   }
   await db.ref('patients/'+id).set(data);
   closeModal();
@@ -1431,7 +1455,7 @@ function promptDischarge(id, name) {
 }
 function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
 function dischargeOpenAbstract() { const id = dischargeId; closeDischargeModal(); openAbstractPrompt(id); }
-function dischargeOpenMedCert() { const id = dischargeId; closeDischargeModal(); openMedCertPrompt(id); }
+function dischargeOpenMedCert() { const id = dischargeId; closeDischargeModal(); openMedCertPrompt(id, true); }
 async function confirmDischarge() {
   if (!dischargeId) return;
   const id = dischargeId; closeDischargeModal();
@@ -1602,7 +1626,7 @@ async function printAbstract() {
   const logoUrl = new URL('logo.png', location.href).href;
 
   const histRows = HISTORY_FIELDS.map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
-  const chartRows = [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+  const chartRows = [['ss','Signs & Symptoms'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
     .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
 
   const body = `
@@ -1626,9 +1650,9 @@ async function printAbstract() {
       </div>
     </div>
     <div class="abs-section-title">History &amp; Physical Examination</div>
-    <div class="abs-section-box">${histRows || '<div class="abs-empty">Not recorded.</div>'}</div>
+    <div class="abs-section-box abs-cols">${histRows || '<div class="abs-empty">Not recorded.</div>'}</div>
     <div class="abs-section-title">Clinical Chart</div>
-    <div class="abs-section-box">${chartRows}</div>
+    <div class="abs-section-box abs-cols">${chartRows}</div>
     ${(finalDx || disposition || homeMeds || specialInstructions) ? `<div class="abs-section-title">Final Assessment</div><div class="abs-section-box">
     ${finalDx ? `<div class="abs-field"><div class="abs-label">Final Diagnosis</div><div class="abs-value">${esc(finalDx)}</div></div>` : ''}
     ${disposition ? `<div class="abs-field"><div class="abs-label">Disposition</div><div class="abs-value">${esc(disposition)}</div></div>` : ''}
@@ -1652,40 +1676,42 @@ async function printAbstract() {
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Abstract — ${esc(p.name||'')}</title>
   <style>
     *{box-sizing:border-box}
-    body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;margin:16mm 18mm;color:#1a1a1a;line-height:1.5}
-    .abs-header{display:flex;align-items:center;gap:14pt;border-bottom:2.5pt solid #1a1a1a;padding-bottom:12pt;margin-bottom:16pt}
-    .abs-header img{width:50pt;height:50pt;object-fit:contain;flex-shrink:0}
+    body{font-family:Georgia,'Times New Roman',serif;font-size:9.3pt;margin:9mm 11mm;color:#1a1a1a;line-height:1.3}
+    .abs-header{display:flex;align-items:center;gap:10pt;border-bottom:2pt solid #1a1a1a;padding-bottom:7pt;margin-bottom:9pt}
+    .abs-header img{width:38pt;height:38pt;object-fit:contain;flex-shrink:0}
     .abs-header-text{flex:1}
-    .abs-hospital{font-size:14.5pt;font-weight:bold;letter-spacing:.2pt}
-    .abs-address{font-size:9pt;color:#555;margin-top:1pt}
-    .abs-sub{font-size:10pt;color:#444;font-style:italic;margin-top:3pt}
-    .abs-date{font-size:9pt;text-align:right;color:#444;white-space:nowrap}
-    .abs-demo{background:#f7f7f5;border:.75pt solid #ddd;border-radius:4pt;padding:10pt 14pt;margin-bottom:16pt}
-    .abs-demo-name{font-size:12.5pt;font-weight:bold;margin-bottom:6pt}
-    .abs-demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6pt 10pt;font-size:9.5pt}
-    .abs-demo-label{display:block;font-size:7.5pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#777}
-    .abs-section-title{font-size:11pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#1a1a1a;border-bottom:1pt solid #1a1a1a;margin:16pt 0 8pt;padding-bottom:4pt}
+    .abs-hospital{font-size:12.5pt;font-weight:bold;letter-spacing:.2pt}
+    .abs-address{font-size:7.5pt;color:#555;margin-top:1pt}
+    .abs-sub{font-size:8.5pt;color:#444;font-style:italic;margin-top:2pt}
+    .abs-date{font-size:7.5pt;text-align:right;color:#444;white-space:nowrap}
+    .abs-demo{background:#f7f7f5;border:.75pt solid #ddd;border-radius:4pt;padding:6pt 12pt;margin-bottom:9pt}
+    .abs-demo-name{font-size:11pt;font-weight:bold;margin-bottom:3pt}
+    .abs-demo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4pt 8pt;font-size:8.2pt}
+    .abs-demo-label{display:block;font-size:6.8pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#777}
+    .abs-section-title{font-size:9.8pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#1a1a1a;border-bottom:1pt solid #1a1a1a;margin:9pt 0 5pt;padding-bottom:3pt}
     .abs-section-box{padding-left:2pt}
-    .abs-field{margin-bottom:9pt}
-    .abs-label{font-size:8.5pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#555;margin-bottom:1pt}
-    .abs-value{font-size:9.8pt;line-height:1.55;white-space:pre-line}
-    .abs-empty{font-size:9.5pt;color:#888;font-style:italic}
-    .abs-sig-row{margin-top:34pt;display:flex;gap:40pt}
+    .abs-section-box.abs-cols{column-count:2;column-gap:16pt}
+    .abs-field{margin-bottom:5pt;break-inside:avoid-column;page-break-inside:avoid}
+    .abs-label{font-size:7.6pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#555;margin-bottom:0}
+    .abs-value{font-size:8.6pt;line-height:1.3;white-space:pre-line}
+    .abs-empty{font-size:8.6pt;color:#888;font-style:italic}
+    .abs-sig-row{margin-top:16pt;display:flex;gap:30pt}
     .abs-sig-block{flex:1;text-align:center}
-    .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:5pt}
-    .abs-sig-name{font-size:10pt;font-weight:bold}
-    .abs-sig-title{font-size:8.5pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
-    @media print{@page{margin:16mm 18mm;size:portrait}}
+    .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:4pt}
+    .abs-sig-name{font-size:9.3pt;font-weight:bold}
+    .abs-sig-title{font-size:7.8pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
+    @media print{@page{margin:9mm 11mm;size:letter portrait}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 600);
 }
 
 /* ===== MEDICAL CERTIFICATE ===== */
-function openMedCertPrompt(id) {
+function openMedCertPrompt(id, fromDischarge) {
   const p = patients[id]; if (!p) return;
   document.getElementById('medcert-id').value = id;
-  document.getElementById('mc-dx').value = p.dx || '';
+  // Upon discharge, prefer the finalized diagnosis if one's been set; otherwise use the working dx
+  document.getElementById('mc-dx').value = (fromDischarge && p.finalDx) ? p.finalDx : (p.dx || '');
   document.getElementById('mc-restdays').value = '';
   document.getElementById('mc-purpose').value = '';
   document.getElementById('mc-purpose-other').value = '';
@@ -1776,7 +1802,7 @@ function openReferPrompt(id) {
 }
 function closeReferPrompt() { document.getElementById('refer-modal').classList.remove('open'); }
 
-function copyReferral() {
+function buildReferralPreview() {
   const id = document.getElementById('refer-id').value;
   const p = patients[id]; if (!p) { closeReferPrompt(); return; }
   const vitals = document.getElementById('refer-vitals').value.trim();
@@ -1785,11 +1811,15 @@ function copyReferral() {
   const reason = document.getElementById('refer-reason').value.trim();
   closeReferPrompt();
 
-  const section = (title, rows) => {
+  // tight = no blank line between rows (short one-liners); spaced = blank line between rows (multi-line fields)
+  const section = (title, rows, tight) => {
     const body = rows.filter(Boolean);
     if (!body.length) return [];
-    const spaced = [];
-    body.forEach((r, i) => { spaced.push(r); if (i < body.length - 1) spaced.push(''); });
+    let spaced = body;
+    if (!tight) {
+      spaced = [];
+      body.forEach((r, i) => { spaced.push(r); if (i < body.length - 1) spaced.push(''); });
+    }
     return [title.toUpperCase(), '-'.repeat(title.length), '', ...spaced, ''];
   };
 
@@ -1800,7 +1830,7 @@ function copyReferral() {
     'Age/Sex: ' + (p.age || '—') + ' / ' + (p.sex || '—'),
     'Ward/Bed: ' + (wardMap[p.ward]?.label || p.ward || '—') + ' / ' + (p.room || '—'),
     'Date Admitted: ' + fmtDate(p.date) + ' (Day ' + days(p.date) + ')',
-  ]));
+  ], true));
 
   lines = lines.concat(section('History & Physical Examination',
     HISTORY_FIELDS.map(([k,label]) => p[k] ? (label + ':\n' + p[k]) : '')
@@ -1820,9 +1850,16 @@ function copyReferral() {
     'Referring Physician: ' + (p.physician || '—'),
     referTo ? 'Referred To: ' + referTo : '',
     reason ? 'Reason for Referral:\n' + reason : '',
-  ]));
+  ], true));
 
   const text = lines.join('\n').trim();
+  document.getElementById('refer-preview-text').value = text;
+  document.getElementById('refer-preview-modal').classList.add('open');
+}
+function closeReferPreview() { document.getElementById('refer-preview-modal').classList.remove('open'); }
+
+function copyReferralPreview() {
+  const text = document.getElementById('refer-preview-text').value;
   const msg = '📋 Case summary copied — paste into the e-referral site';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
