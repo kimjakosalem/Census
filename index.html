@@ -164,6 +164,7 @@
   .label-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .label-row label{margin:0}
   .label-row .btn-sm{padding:2px 8px;font-size:11px}
+  .meds-preview{font-size:12px;color:var(--text2);font-style:italic;padding:2px 2px 0}
   .form-group.full{grid-column:1/-1}
   #history-pe-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
   label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
@@ -264,6 +265,7 @@
       <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-full"> Print Endorsement</span></button>
       <button class="btn btn-outline btn-sm" id="rounds-toggle" onclick="toggleRoundsView()" title="Rounds Mode">🩺<span class="btn-label-full"> Rounds</span></button>
       <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Recently Discharged">🗄️<span class="btn-label-full"> Recently Discharged</span></button>
+      <button class="btn btn-outline btn-sm" id="medabbrev-toggle" onclick="openMedAbbrevModal()" title="Medication Abbreviations">💊<span class="btn-label-full"> Med Abbrev.</span></button>
       <button class="btn btn-primary" onclick="openAdmitModal()" title="Admit Patient">+<span class="btn-label-full"> Admit Patient</span></button>
       <button class="btn btn-outline btn-sm" onclick="doLogout()" title="Sign Out">🔒<span class="btn-label-full"> Sign Out</span></button>
     </div>
@@ -462,20 +464,27 @@
           <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
         </div>
         <div class="form-group full">
+          <div class="label-row"><label>Labs Ordered / Pending</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labsOrdered')">📋 Copy</button></div>
+          <textarea id="f-labsOrdered" placeholder="Tests ordered, awaiting results..."></textarea>
+        </div>
+        <div class="form-group full">
           <div class="label-row"><label>Lab Results</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labs')">📋 Copy</button></div>
           <textarea id="f-labs" placeholder="CBC, chemistry, cultures, imaging..."></textarea>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Medications / Orders</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-meds')">📋 Copy</button></div>
-          <textarea id="f-meds" placeholder="Current medications and standing orders..."></textarea>
+          <textarea id="f-meds" placeholder="Current medications and standing orders..." oninput="updateMedsPreview('f-meds','f-meds-preview')"></textarea>
+          <div id="f-meds-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
-          <textarea id="f-plan" placeholder="Management plan, referrals, procedures..."></textarea>
+          <textarea id="f-plan" placeholder="Management plan, referrals, procedures..." oninput="updateMedsPreview('f-plan','f-plan-preview')"></textarea>
+          <div id="f-plan-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Remarks / Notes</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-remarks')">📋 Copy</button></div>
-          <textarea id="f-remarks" placeholder="Code status, family contacts, other notes..."></textarea>
+          <textarea id="f-remarks" placeholder="Code status, family contacts, other notes..." oninput="updateMedsPreview('f-remarks','f-remarks-preview')"></textarea>
+          <div id="f-remarks-preview" class="meds-preview" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -643,6 +652,41 @@
   </div>
 </div>
 
+<!-- Medication Abbreviations Admin Modal (Dr. Kim Jakosalem only) -->
+<div class="modal-overlay" id="medabbrev-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">💊 Medication Abbreviations</div>
+      <button class="modal-close" onclick="closeMedAbbrevModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="medabbrev-desc" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
+      <div class="search-box" style="max-width:none;margin-bottom:14px">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="medabbrev-search" placeholder="Check if an abbreviation is already registered..." oninput="renderMedAbbrevList()">
+        <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('medabbrev-search',renderMedAbbrevList)">×</button>
+      </div>
+      <div id="medabbrev-edit-controls" style="display:none">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="form-group">
+            <label>Abbreviation(s)</label>
+            <input type="text" id="ma-abbrev" placeholder="e.g. PCM, Para">
+          </div>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="ma-fullname" placeholder="e.g. Salbutamol-Ipratropium">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-bottom:16px" onclick="addMedAbbrev()">➕ Add / Update</button>
+      </div>
+      <div id="medabbrev-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeMedAbbrevModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Discharge Confirm Modal -->
 <div class="modal-overlay" id="discharge-modal">
   <div class="confirm-modal">
@@ -680,20 +724,27 @@
           <textarea id="r-dx" placeholder="Current working diagnosis — pre-filled with the existing one, edit and save to update it"></textarea>
         </div>
         <div class="form-group full">
+          <label>Labs Ordered / Pending</label>
+          <textarea id="r-labsOrdered" placeholder="Tests ordered, awaiting results — pre-filled with the existing one, edit and save to update it"></textarea>
+        </div>
+        <div class="form-group full">
           <label>New Lab Results</label>
           <textarea id="r-labs" placeholder="New labs / imaging results..."></textarea>
         </div>
         <div class="form-group full">
           <label>New Orders</label>
-          <textarea id="r-orders" placeholder="New orders / medication changes..."></textarea>
+          <textarea id="r-orders" placeholder="New orders / medication changes..." oninput="updateMedsPreview('r-orders','r-orders-preview')"></textarea>
+          <div id="r-orders-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
           <label>New Plan</label>
-          <textarea id="r-plan" placeholder="Updated management plan, referrals, procedures..."></textarea>
+          <textarea id="r-plan" placeholder="Updated management plan, referrals, procedures..." oninput="updateMedsPreview('r-plan','r-plan-preview')"></textarea>
+          <div id="r-plan-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
           <label>New Remarks / Notes</label>
-          <textarea id="r-remarks" placeholder="Code status, family updates, other notes..."></textarea>
+          <textarea id="r-remarks" placeholder="Code status, family updates, other notes..." oninput="updateMedsPreview('r-remarks','r-remarks-preview')"></textarea>
+          <div id="r-remarks-preview" class="meds-preview" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -769,6 +820,144 @@ const DOCTOR_MAP = {
 const HOSPITAL_CHIEF = 'Dr. Jenellie Faith B. Ozoa';
 function doctorName(email) { return DOCTOR_MAP[(email||'').toLowerCase()] || email || ''; }
 let currentDoctorName = '';
+let currentUserEmail = '';
+// Temporarily opened up to all doctors while the dictionary is being built out.
+// To restrict back to Dr. Kim Jakosalem only, change this to: Object.keys(DOCTOR_MAP).includes(currentUserEmail)
+// -> [MED_ABBREV_ADMIN_EMAIL] with MED_ABBREV_ADMIN_EMAIL = 'kjakosalem@cllmmh.local'.
+const MED_ABBREV_ADMIN_EMAILS = Object.keys(DOCTOR_MAP);
+function isAdmin() { return MED_ABBREV_ADMIN_EMAILS.includes(currentUserEmail); }
+
+/* ===== MEDICATION ABBREVIATION EXPANSION =====
+   Draft starter list — review and extend via the /med-abb skill as new shorthand shows up.
+   Keys are lowercase; lookup is case-insensitive so doctors can keep typing however they like. */
+const MED_ABBREV_MAP = {
+  'azith': 'Azithromycin',
+  'nac': 'Acetylcysteine (NAC)',
+  'piptaz': 'Piperacillin-Tazobactam',
+  'salb': 'Salbutamol',
+  'salbu': 'Salbutamol',
+  'ipra': 'Ipratropium',
+  'combivent': 'Salbutamol-Ipratropium (Combivent)',
+  'levoflox': 'Levofloxacin',
+  'cipro': 'Ciprofloxacin',
+  'metro': 'Metronidazole',
+  'clinda': 'Clindamycin',
+  'genta': 'Gentamicin',
+  'amika': 'Amikacin',
+  'vanco': 'Vancomycin',
+  'mero': 'Meropenem',
+  'coamox': 'Co-Amoxiclav (Amoxicillin-Clavulanate)',
+  'amox': 'Amoxicillin',
+  'ceftaz': 'Ceftazidime',
+  'keto': 'Ketorolac',
+  'nahco': 'Sodium Bicarbonate',
+  'omep': 'Omeprazole',
+  'panto': 'Pantoprazole',
+  'ranitidine': 'Ranitidine',
+  'neuro': 'Neurobion (Vitamin B Complex)',
+  'dexa': 'Dexamethasone',
+  'hydrocort': 'Hydrocortisone',
+  'parac': 'Paracetamol',
+  'tramal': 'Tramadol',
+  'lasix': 'Furosemide',
+  'amlo': 'Amlodipine',
+  'hctz': 'Hydrochlorothiazide',
+  'asa': 'Aspirin (Acetylsalicylic Acid)',
+  'd5': 'Dextrose 5% in Water (D5W)',
+  // IV fluid shorthand (LR, NSS/PNSS) intentionally left unexpanded — doctors prefer these as-is
+  'mgso4': 'Magnesium Sulfate',
+  'kcl': 'Potassium Chloride',
+  'mucosolvan': 'Ambroxol (Mucosolvan)',
+};
+// admin-editable additions/overrides, synced from Firebase (medAbbrev/), merged on top of the built-in list above
+let customMedAbbrev = {};
+function lookupMedAbbrev(key) { return customMedAbbrev[key] || MED_ABBREV_MAP[key]; }
+function expandMeds(text) {
+  if (!text) return text;
+  return text.replace(/[A-Za-z][A-Za-z0-9]*(?:\+[A-Za-z][A-Za-z0-9]*)*/g, token => {
+    if (token.includes('+')) {
+      return token.split('+').map(t => lookupMedAbbrev(t.toLowerCase()) || t).join(' + ');
+    }
+    return lookupMedAbbrev(token.toLowerCase()) || token;
+  });
+}
+// fields that may mention drugs in free text and should show expanded names wherever displayed
+const MEDS_EXPAND_FIELDS = new Set(['meds','orders','plan','remarks']);
+function expandIfMeds(k, v) { return MEDS_EXPAND_FIELDS.has(k) ? expandMeds(v) : v; }
+function updateMedsPreview(srcId, outId) {
+  const val = document.getElementById(srcId).value;
+  const out = document.getElementById(outId);
+  if (!val.trim()) { out.style.display = 'none'; return; }
+  out.textContent = '💊 Reads as: ' + expandMeds(val);
+  out.style.display = '';
+}
+
+/* ===== MED ABBREVIATIONS — viewable by all staff, editable by Dr. Kim Jakosalem only ===== */
+function openMedAbbrevModal() {
+  const admin = isAdmin();
+  document.getElementById('medabbrev-desc').textContent = admin
+    ? 'Abbreviations doctors type while charting (e.g. "Azith") are expanded to their full name in the Referral, Medical Abstract, Endorsement printouts, and patient cards — matching is not case-sensitive. Entries you add here apply for everyone and sync immediately. If a drug has more than one common shorthand (e.g. PCM and Para both mean Paracetamol), separate them with commas to add them both at once.'
+    : 'Search below to check whether a medication abbreviation is already registered. Recognized abbreviations are automatically expanded to their full name on cards, Referral, Medical Abstract, and Endorsement printouts. Only Dr. Kim Jakosalem can add or remove entries — let her know if one\'s missing.';
+  document.getElementById('medabbrev-edit-controls').style.display = admin ? '' : 'none';
+  document.getElementById('ma-abbrev').value = '';
+  document.getElementById('ma-fullname').value = '';
+  document.getElementById('medabbrev-search').value = '';
+  document.getElementById('medabbrev-search').closest('.search-box').classList.remove('has-text');
+  renderMedAbbrevList();
+  document.getElementById('medabbrev-modal').classList.add('open');
+}
+function closeMedAbbrevModal() { document.getElementById('medabbrev-modal').classList.remove('open'); }
+
+function renderMedAbbrevList() {
+  const el = document.getElementById('medabbrev-list');
+  const admin = isAdmin();
+  const search = (document.getElementById('medabbrev-search')?.value || '').toLowerCase();
+  document.getElementById('medabbrev-search')?.closest('.search-box').classList.toggle('has-text', !!search);
+  const matches = (k) => !search || k.includes(search) || (lookupMedAbbrev(k)||'').toLowerCase().includes(search);
+  const customKeys = Object.keys(customMedAbbrev).filter(matches).sort();
+  const builtinKeys = Object.keys(MED_ABBREV_MAP).filter(k => !customMedAbbrev[k]).filter(matches).sort();
+  let html = '';
+  if (customKeys.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Added by staff</div>';
+    customKeys.forEach(k => {
+      html += `<div class="card-field" style="align-items:center">
+        <span class="field-label" style="min-width:90px">${esc(k)}</span>
+        <span class="field-value">${esc(customMedAbbrev[k])}</span>
+        ${admin ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="deleteMedAbbrev('${esc(k)}')">🗑️</button>` : ''}
+      </div>`;
+    });
+    html += '<div style="height:10px"></div>';
+  }
+  if (builtinKeys.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Built-in defaults${admin?' (edit via code/skill)':''}</div>`;
+    builtinKeys.forEach(k => {
+      html += `<div class="card-field"><span class="field-label" style="min-width:90px">${esc(k)}</span><span class="field-value">${esc(MED_ABBREV_MAP[k])}</span></div>`;
+    });
+  }
+  if (!customKeys.length && !builtinKeys.length) {
+    html = `<div class="empty-state" style="padding:30px 16px"><div class="empty-icon">💊</div><div class="empty-title">No match</div><div style="font-size:13px;color:var(--text3)">"${esc(search)}" isn't registered yet.</div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function addMedAbbrev() {
+  // supports multiple abbreviations for the same drug, comma-separated (e.g. "PCM, Para")
+  const abbrevs = document.getElementById('ma-abbrev').value.trim().toLowerCase()
+    .split(',').map(s => s.trim()).filter(Boolean);
+  const fullName = document.getElementById('ma-fullname').value.trim();
+  if (!abbrevs.length || !fullName) { alert('Enter both an abbreviation and its full name.'); return; }
+  const bad = abbrevs.find(a => /[.#$\[\]\/]/.test(a));
+  if (bad) { alert('Abbreviation "' + bad + '" can\'t contain . # $ [ ] or /'); return; }
+  await Promise.all(abbrevs.map(a => db.ref('medAbbrev/' + a).set(fullName)));
+  document.getElementById('ma-abbrev').value = '';
+  document.getElementById('ma-fullname').value = '';
+  showToast(abbrevs.length > 1 ? `✓ ${abbrevs.length} abbreviations saved` : '✓ Abbreviation saved');
+}
+
+async function deleteMedAbbrev(key) {
+  await db.ref('medAbbrev/' + key).remove();
+  showToast('Abbreviation removed');
+}
 
 let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null;
 let discharged = {}, showingDischarged = false, showingRounds = false;
@@ -792,6 +981,7 @@ window.addEventListener('load', () => {
     db = firebase.database();
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
+        currentUserEmail = (user.email || '').toLowerCase();
         currentDoctorName = doctorName(user.email);
         document.getElementById('doctor-name').textContent = currentDoctorName;
         document.getElementById('login-screen').style.display = 'none';
@@ -799,6 +989,7 @@ window.addEventListener('load', () => {
         startCensus();
         startIdleWatch();
       } else {
+        currentUserEmail = '';
         currentDoctorName = '';
         document.getElementById('doctor-name').textContent = '';
         document.getElementById('login-screen').style.display = 'flex';
@@ -852,6 +1043,10 @@ function startCensus() {
   db.ref('.info/connected').on('value', snap => {
     setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
   });
+  db.ref('medAbbrev').on('value', snap => {
+    customMedAbbrev = snap.val() || {};
+    if (document.getElementById('medabbrev-modal').classList.contains('open')) renderMedAbbrevList();
+  });
   // safety sweep while the app stays open (auto-delete doesn't depend on a server)
   setInterval(pruneDischarged, 10 * 60 * 1000);
 }
@@ -893,7 +1088,7 @@ function renderDischarged() {
   if (!container) return;
   const search = (document.getElementById('discharged-search')?.value || '').toLowerCase();
   const all = Object.entries(discharged).map(([id, p]) => ({ ...p, id }))
-    .filter(p => !search || [p.name, p.room, p.dx, p.ss, p.labs, p.meds, p.remarks, p.plan, p.ward]
+    .filter(p => !search || [p.name, p.room, p.dx, p.ss, p.labsOrdered, p.labs, p.meds, p.remarks, p.plan, p.ward]
       .some(f => (f || '').toLowerCase().includes(search)))
     .sort((a, b) => (b.dischargedAt || 0) - (a.dischargedAt || 0));  // most recently discharged first
 
@@ -924,7 +1119,7 @@ function renderDischarged() {
         <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
       </div>
       ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
-      ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
+      ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
       <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}</span></div>
       <div class="card-actions">
         <button class="btn btn-green btn-sm" onclick="restorePatient('${p.id}')">↩️ Re-admit</button>
@@ -971,8 +1166,8 @@ function renderRounds() {
   const filtered = all.filter(p => {
     const mw = roundsFilter==='all' || p.ward===roundsFilter;
     const pnd = p.round?.pending || {};
-    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labs,p.meds,p.remarks,p.plan,
-                            pnd.ss,pnd.dx,pnd.labs,pnd.orders,pnd.plan,pnd.remarks]
+    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan,
+                            pnd.ss,pnd.dx,pnd.labsOrdered,pnd.labs,pnd.orders,pnd.plan,pnd.remarks]
       .some(f=>(f||'').toLowerCase().includes(search));
     return mw && ms;
   }).sort((a,b) => {
@@ -1003,13 +1198,13 @@ function renderRounds() {
       const pill = st === 'pending' ? '<span class="round-pill pending">🆕 PENDING</span>'
                  : st === 'charted' ? '<span class="round-pill charted">✓ CHARTED</span>' : '';
       const pend = p.round?.pending || {};
-      const pendRows = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['orders','Orders'],['plan','Plan'],['remarks','Note']]
-        .map(([k,lbl]) => pend[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(pend[k])}</span></div>` : '').join('');
+      const pendRows = [['ss','S&S'],['dx','Dx'],['labsOrdered','Labs Ord'],['labs','Labs'],['orders','Orders'],['plan','Plan'],['remarks','Note']]
+        .map(([k,lbl]) => pend[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,pend[k]))}</span></div>` : '').join('');
       const pendBlock = (st === 'pending' && pendRows)
         ? `<div class="pending-block"><div class="pending-block-title" style="display:flex;align-items:center;justify-content:space-between">🆕 Pending — not yet charted<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px" onclick="copySoap('${p.id}')">📋 Copy SOAP</button></div>${pendRows}</div>` : '';
       // full chart shown read-only, like bringing the chart to the bedside
-      const chart = [['ss','S&S'],['dx','Dx'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
-        .map(([k,lbl]) => p[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(p[k])}</span></div>` : '').join('');
+      const chart = [['ss','S&S'],['dx','Dx'],['labsOrdered','Labs Ord'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
+        .map(([k,lbl]) => p[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,p[k]))}</span></div>` : '').join('');
       html += `<div class="patient-card${cardCls}" style="cursor:default">
         <div class="card-top">
           <div style="min-width:0">
@@ -1041,11 +1236,16 @@ function openRoundsModal(id) {
   // Diagnosis/Assessment is a running working dx, not an append log — default to the current
   // value (or the in-progress pending edit, or the admitting dx if nothing's been set yet)
   document.getElementById('r-dx').value = pend.dx || p.dx || p.admDx || '';
+  // Labs Ordered/Pending is also a current snapshot, not an append log — same default pattern as dx
+  document.getElementById('r-labsOrdered').value = pend.labsOrdered || p.labsOrdered || '';
   document.getElementById('r-labs').value = pend.labs || '';
   document.getElementById('r-orders').value = pend.orders || '';
   document.getElementById('r-plan').value = pend.plan || '';
   document.getElementById('r-remarks').value = pend.remarks || '';
   document.getElementById('rounds-modal').classList.add('open');
+  updateMedsPreview('r-orders','r-orders-preview');
+  updateMedsPreview('r-plan','r-plan-preview');
+  updateMedsPreview('r-remarks','r-remarks-preview');
 }
 function closeRoundsModal() { document.getElementById('rounds-modal').classList.remove('open'); }
 
@@ -1128,6 +1328,7 @@ async function saveRoundsNotes() {
   const pending = {
     ss: document.getElementById('r-ss').value.trim(),
     dx: document.getElementById('r-dx').value.trim(),
+    labsOrdered: document.getElementById('r-labsOrdered').value.trim(),
     labs: document.getElementById('r-labs').value.trim(),
     orders: document.getElementById('r-orders').value.trim(),
     plan: document.getElementById('r-plan').value.trim(),
@@ -1152,6 +1353,7 @@ function chartUpdate(p) {
   return {
     ss: appendStamped(p.ss, pend.ss),
     dx: pend.dx ? pend.dx.trim() : (p.dx || ''),   // working dx is replaced in place, not appended/dated
+    labsOrdered: pend.labsOrdered ? pend.labsOrdered.trim() : (p.labsOrdered || ''),   // same — current snapshot, not a log
     labs: appendStamped(p.labs, pend.labs),
     meds: appendStamped(p.meds, pend.orders),     // Orders merge into Meds/Orders
     plan: appendStamped(p.plan, pend.plan),
@@ -1253,6 +1455,12 @@ function formatName(s) { return titleCase(String(s||'').trim().replace(/,(?!\s)/
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function tr(s,n) { return s&&s.length>n?s.substring(0,n)+'…':s; }
 function fmtDate(d) { if(!d)return'—'; try{return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}catch{return d}; }
+function labsCellHTML(p) {
+  const parts = [];
+  if (p.labsOrdered) parts.push((p.labs?'<strong>Ord:</strong> ':'') + esc(p.labsOrdered));
+  if (p.labs) parts.push((p.labsOrdered?'<strong>Res:</strong> ':'') + esc(p.labs));
+  return parts.join('<br>') || '—';
+}
 function uid() { return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
 
 /* ===== SEARCH CLEAR ===== */
@@ -1306,7 +1514,7 @@ function renderPatients() {
 
   const filtered = all.filter(p => {
     const mw = currentFilter==='all' || p.ward===currentFilter;
-    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labs,p.meds,p.remarks,p.plan].some(f=>(f||'').toLowerCase().includes(search));
+    const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan].some(f=>(f||'').toLowerCase().includes(search));
     return mw && ms;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
@@ -1352,10 +1560,11 @@ function renderPatients() {
         ${p.physician?`<div class="card-field"><span class="field-label">MD</span><span class="field-value">${esc(p.physician)}</span></div>`:''}
         ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
         ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
+        ${p.labsOrdered?`<div class="card-field"><span class="field-label">Labs Ord</span><span class="field-value">${esc(p.labsOrdered)}</span></div>`:''}
         ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
-        ${p.meds?`<div class="card-field"><span class="field-label">Meds/Ord</span><span class="field-value">${esc(p.meds)}</span></div>`:''}
-        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(p.plan)}</span></div>`:''}
-        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(p.remarks)}</span></div>`:''}
+        ${p.meds?`<div class="card-field"><span class="field-label">Meds/Ord</span><span class="field-value">${esc(expandMeds(p.meds))}</span></div>`:''}
+        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(expandMeds(p.plan))}</span></div>`:''}
+        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
           <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
@@ -1389,22 +1598,28 @@ function openAdmitModal() {
   document.getElementById('f-physician').value = currentDoctorName;
   document.getElementById('history-pe-section').style.display = '';
   document.getElementById('patient-modal').classList.add('open');
+  updateMedsPreview('f-meds','f-meds-preview');
+  updateMedsPreview('f-plan','f-plan-preview');
+  updateMedsPreview('f-remarks','f-remarks-preview');
 }
 
 function openEditModal(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
   document.getElementById('edit-id').value = id;
-  ['name','age','sex','date','ward','room','physician','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
   document.getElementById('f-priority').checked = !!p.priority;
   document.getElementById('history-pe-section').style.display = 'none';
   document.getElementById('patient-modal').classList.add('open');
+  updateMedsPreview('f-meds','f-meds-preview');
+  updateMedsPreview('f-plan','f-plan-preview');
+  updateMedsPreview('f-remarks','f-remarks-preview');
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','ss','dx','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
@@ -1427,6 +1642,7 @@ async function savePatient() {
     physician: document.getElementById('f-physician').value.trim(),
     ss: document.getElementById('f-ss').value.trim(),
     dx: document.getElementById('f-dx').value.trim(),
+    labsOrdered: document.getElementById('f-labsOrdered').value.trim(),
     labs: document.getElementById('f-labs').value.trim(),
     meds: document.getElementById('f-meds').value.trim(),
     plan: document.getElementById('f-plan').value.trim(),
@@ -1506,9 +1722,9 @@ function buildPreviewHTML(hospital) {
         <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong style="color:var(--text)">'+esc(p.dx)+'</strong>':''}${p.dx&&p.ss?'<br>':''}${p.ss?'<span style="font-size:11px">'+esc(p.ss)+'</span>':''}</td>
-        <td style="font-size:11px">${esc(p.labs||'—')}</td>
-        <td style="font-size:11px">${esc(p.meds||'—')}</td>
-        <td style="font-size:11px">${p.plan?esc(p.plan):''}${p.plan&&p.remarks?'<br>':''}${p.remarks?'<em>'+esc(p.remarks)+'</em>':''}</td>
+        <td style="font-size:11px">${labsCellHTML(p)}</td>
+        <td style="font-size:11px">${esc(expandMeds(p.meds)||'—')}</td>
+        <td style="font-size:11px">${p.plan?esc(expandMeds(p.plan)):''}${p.plan&&p.remarks?'<br>':''}${p.remarks?'<em>'+esc(expandMeds(p.remarks))+'</em>':''}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -1556,9 +1772,9 @@ function doPrint() {
         <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong>'+esc(p.dx)+'</strong>':''}${p.ss?'<br>'+esc(p.ss):''}</td>
-        <td>${esc(p.labs||'—')}</td>
-        <td>${esc(p.meds||'—')}</td>
-        <td>${esc(p.plan||'')}${p.remarks?'<br><em>'+esc(p.remarks)+'</em>':''}</td>
+        <td>${labsCellHTML(p)}</td>
+        <td>${esc(expandMeds(p.meds)||'—')}</td>
+        <td>${esc(expandMeds(p.plan)||'')}${p.remarks?'<br><em>'+esc(expandMeds(p.remarks))+'</em>':''}</td>
       </tr>`;
     });
     body += '</tbody></table>';
@@ -1626,8 +1842,8 @@ async function printAbstract() {
   const logoUrl = new URL('logo.png', location.href).href;
 
   const histRows = HISTORY_FIELDS.map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
-  const chartRows = [['ss','Signs & Symptoms'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
-    .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
+  const chartRows = [['ss','Signs & Symptoms'],['labsOrdered','Labs Ordered/Pending'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+    .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(expandIfMeds(k,p[k]))}</div></div>` : '').join('');
 
   const body = `
     <div class="abs-header">
@@ -1837,8 +2053,8 @@ function buildReferralPreview() {
   ));
 
   lines = lines.concat(section('Clinical Chart',
-    [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
-      .map(([k,label]) => p[k] ? (label + ':\n' + p[k]) : '')
+    [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labsOrdered','Labs Ordered/Pending'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+      .map(([k,label]) => p[k] ? (label + ':\n' + expandIfMeds(k,p[k])) : '')
   ));
 
   lines = lines.concat(section('Latest Findings (at Referral)', [
