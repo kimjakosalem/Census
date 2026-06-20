@@ -376,7 +376,7 @@
       <div class="form-grid">
         <div class="form-group full">
           <label>Full Name *</label>
-          <input type="text" id="f-name" placeholder="Last, First MI">
+          <input type="text" id="f-name" placeholder="Last, First MI" oninput="autoSpaceCommas(this)" onblur="this.value = formatName(this.value)">
         </div>
         <div class="form-group">
           <label>Age</label>
@@ -585,12 +585,52 @@
   </div>
 </div>
 
+<!-- e-Referral Case Summary Modal -->
+<div class="modal-overlay" id="refer-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Refer Patient — Case Summary</div>
+      <button class="modal-close" onclick="closeReferPrompt()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="refer-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Latest Vital Signs</label>
+          <textarea id="refer-vitals" placeholder="BP, HR, RR, Temp, O2 sat, etc., taken just before referral..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Latest Physical Exam</label>
+          <textarea id="refer-pe" placeholder="Current PE findings at the time of referral..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Referred To (Facility / Specialist)</label>
+          <input type="text" id="refer-to" placeholder="e.g. Negros Oriental Provincial Hospital — Internal Medicine">
+        </div>
+        <div class="form-group full">
+          <label>Reason for Referral</label>
+          <textarea id="refer-reason" placeholder="Why this patient is being referred..."></textarea>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">This builds a copyable case summary from the patient's chart and history — paste it into the e-referral site's clinical summary field.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeReferPrompt()">Cancel</button>
+      <button class="btn btn-primary" onclick="copyReferral()">📋 Copy Case Summary</button>
+    </div>
+  </div>
+</div>
+
 <!-- Discharge Confirm Modal -->
 <div class="modal-overlay" id="discharge-modal">
   <div class="confirm-modal">
     <div class="confirm-icon">🚪</div>
     <div class="confirm-title">Discharge Patient?</div>
     <div class="confirm-text" id="discharge-text">This will permanently remove the patient from the census.</div>
+    <div class="confirm-actions" style="margin-bottom:10px">
+      <button class="btn btn-outline" onclick="dischargeOpenAbstract()">🖨️ Abstract</button>
+      <button class="btn btn-outline" onclick="dischargeOpenMedCert()">📄 Med Cert</button>
+    </div>
     <div class="confirm-actions">
       <button class="btn btn-outline" onclick="closeDischargeModal()">Cancel</button>
       <button class="btn btn-danger" onclick="confirmDischarge()">Confirm Discharge</button>
@@ -1177,6 +1217,15 @@ function setConn(ok, txt) {
 
 /* ===== HELPERS ===== */
 function days(d) { if(!d)return 0; return Math.max(0,Math.floor((Date.now()-new Date(d+'T00:00:00').getTime())/86400000)); }
+function titleCase(s) { return String(s||'').replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()); }
+function autoSpaceCommas(el) {
+  const pos = el.selectionStart;
+  const before = el.value.slice(0, pos);
+  const insertedBefore = (before.match(/,(?!\s)/g) || []).length;
+  el.value = el.value.replace(/,(?!\s)/g, ', ');
+  el.selectionStart = el.selectionEnd = pos + insertedBefore;
+}
+function formatName(s) { return titleCase(String(s||'').trim().replace(/,(?!\s)/g, ', ')); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function tr(s,n) { return s&&s.length>n?s.substring(0,n)+'…':s; }
 function fmtDate(d) { if(!d)return'—'; try{return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}catch{return d}; }
@@ -1288,6 +1337,7 @@ function renderPatients() {
           <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
           <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}')">📄 Med Cert</button>
+          <button class="btn btn-outline btn-sm" onclick="openReferPrompt('${p.id}')">🔁 Refer</button>
           <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
           <div class="days-badge">Day ${d}</div>
         </div>
@@ -1339,7 +1389,7 @@ function clearForm() {
 function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
 
 async function savePatient() {
-  const name = document.getElementById('f-name').value.trim();
+  const name = formatName(document.getElementById('f-name').value);
   const ward = document.getElementById('f-ward').value;
   const date = document.getElementById('f-date').value;
   if (!name||!ward||!date) { alert('Name, Ward, and Date Admitted are required.'); return; }
@@ -1380,6 +1430,8 @@ function promptDischarge(id, name) {
   document.getElementById('discharge-modal').classList.add('open');
 }
 function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
+function dischargeOpenAbstract() { const id = dischargeId; closeDischargeModal(); openAbstractPrompt(id); }
+function dischargeOpenMedCert() { const id = dischargeId; closeDischargeModal(); openMedCertPrompt(id); }
 async function confirmDischarge() {
   if (!dischargeId) return;
   const id = dischargeId; closeDischargeModal();
@@ -1515,7 +1567,8 @@ const DISPOSITION_OPTIONS = ['Discharged Improved','Discharged Against Medical A
 function openAbstractPrompt(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('abstract-id').value = id;
-  document.getElementById('abs-finaldx').value = p.finalDx || '';
+  // Defaults to the current working diagnosis until the user edits and saves their own final dx
+  document.getElementById('abs-finaldx').value = p.finalDx || p.dx || '';
   const dispSelect = document.getElementById('abs-disposition');
   const dispOther = document.getElementById('abs-disposition-other');
   if (p.disposition && DISPOSITION_OPTIONS.includes(p.disposition)) {
@@ -1709,6 +1762,71 @@ function printMedCert() {
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 600);
+}
+
+/* ===== REFER — COPYABLE CASE SUMMARY ===== */
+function openReferPrompt(id) {
+  const p = patients[id]; if (!p) return;
+  document.getElementById('refer-id').value = id;
+  document.getElementById('refer-vitals').value = '';
+  document.getElementById('refer-pe').value = '';
+  document.getElementById('refer-to').value = '';
+  document.getElementById('refer-reason').value = '';
+  document.getElementById('refer-modal').classList.add('open');
+}
+function closeReferPrompt() { document.getElementById('refer-modal').classList.remove('open'); }
+
+function copyReferral() {
+  const id = document.getElementById('refer-id').value;
+  const p = patients[id]; if (!p) { closeReferPrompt(); return; }
+  const vitals = document.getElementById('refer-vitals').value.trim();
+  const latestPE = document.getElementById('refer-pe').value.trim();
+  const referTo = document.getElementById('refer-to').value.trim();
+  const reason = document.getElementById('refer-reason').value.trim();
+  closeReferPrompt();
+
+  const section = (title, rows) => {
+    const body = rows.filter(Boolean);
+    if (!body.length) return [];
+    const spaced = [];
+    body.forEach((r, i) => { spaced.push(r); if (i < body.length - 1) spaced.push(''); });
+    return [title.toUpperCase(), '-'.repeat(title.length), '', ...spaced, ''];
+  };
+
+  let lines = ['CASE SUMMARY FOR REFERRAL', '='.repeat(25), ''];
+
+  lines = lines.concat(section('Patient Information', [
+    'Patient: ' + (p.name || '—'),
+    'Age/Sex: ' + (p.age || '—') + ' / ' + (p.sex || '—'),
+    'Ward/Bed: ' + (wardMap[p.ward]?.label || p.ward || '—') + ' / ' + (p.room || '—'),
+    'Date Admitted: ' + fmtDate(p.date) + ' (Day ' + days(p.date) + ')',
+  ]));
+
+  lines = lines.concat(section('History & Physical Examination',
+    HISTORY_FIELDS.map(([k,label]) => p[k] ? (label + ':\n' + p[k]) : '')
+  ));
+
+  lines = lines.concat(section('Clinical Chart',
+    [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+      .map(([k,label]) => p[k] ? (label + ':\n' + p[k]) : '')
+  ));
+
+  lines = lines.concat(section('Latest Findings (at Referral)', [
+    vitals ? 'Vital Signs:\n' + vitals : '',
+    latestPE ? 'Physical Exam:\n' + latestPE : '',
+  ]));
+
+  lines = lines.concat(section('Referral Details', [
+    'Referring Physician: ' + (p.physician || '—'),
+    referTo ? 'Referred To: ' + referTo : '',
+    reason ? 'Reason for Referral:\n' + reason : '',
+  ]));
+
+  const text = lines.join('\n').trim();
+  const msg = '📋 Case summary copied — paste into the e-referral site';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
+  } else { fallbackCopy(text, msg); }
 }
 
 function showToast(msg) {
