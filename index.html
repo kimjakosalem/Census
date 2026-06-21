@@ -126,6 +126,8 @@
   /* priority */
   .patient-card.priority{border-color:#7a2a2a;box-shadow:0 0 0 1px #7a2a2a,var(--shadow)}
   .priority-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--danger);background:var(--danger-bg);border:1px solid #5a2222;padding:2px 8px;border-radius:10px;margin-top:5px}
+  .no-history-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:#a8730a;background:#3a2d10;border:1px solid #5a4515;padding:2px 8px;border-radius:10px;margin-top:5px;margin-left:5px}
+  .history-btn-warn{color:#a8730a!important;border-color:#5a4515!important}
   .switch{position:relative;display:inline-flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
   .switch input{position:absolute;opacity:0;width:0;height:0}
   .switch .track{width:44px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--border2);transition:all .2s;position:relative;flex-shrink:0}
@@ -167,6 +169,7 @@
   .meds-preview{font-size:12px;color:var(--text2);font-style:italic;padding:2px 2px 0}
   .form-group.full{grid-column:1/-1}
   #history-pe-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #soap-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
   label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
   input,select,textarea{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface2);transition:all .15s;outline:none}
   input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,126,248,.18);background:var(--surface3)}
@@ -427,10 +430,6 @@
         </div>
         <div id="history-pe-section">
           <div class="form-group full">
-            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
-            <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
-          </div>
-          <div class="form-group full">
             <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
             <textarea id="f-cc" placeholder="Reason for admission, in the patient's own words..."></textarea>
           </div>
@@ -454,21 +453,31 @@
             <div class="label-row"><label>Physical Examination (PE)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-pe')">📋 Copy</button></div>
             <textarea id="f-pe" placeholder="Findings on physical exam..."></textarea>
           </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
+            <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
+          </div>
         </div>
-        <div class="form-group full">
-          <div class="label-row"><label>Signs &amp; Symptoms</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ss')">📋 Copy</button></div>
-          <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
-        </div>
-        <div class="form-group full">
-          <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
-          <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
+        <div id="soap-section">
+          <div class="form-group full">
+            <div class="label-row"><label>Signs &amp; Symptoms</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ss')">📋 Copy</button></div>
+            <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
+            <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
+          </div>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Labs Ordered / Pending</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labsOrdered')">📋 Copy</button></div>
           <textarea id="f-labsOrdered" placeholder="Tests ordered, awaiting results..."></textarea>
         </div>
-        <div class="form-group full">
-          <div class="label-row"><label>Lab Results</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labs')">📋 Copy</button></div>
+        <div class="form-group full" id="labs-results-group">
+          <div class="label-row">
+            <label>Lab Results</label>
+            <button type="button" class="btn btn-outline btn-sm" id="labs-results-toggle-btn" onclick="toggleLabsResults()">＋ Lab results available?</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labs')">📋 Copy</button>
+          </div>
           <textarea id="f-labs" placeholder="CBC, chemistry, cultures, imaging..."></textarea>
         </div>
         <div class="form-group full">
@@ -1548,12 +1557,13 @@ function renderPatients() {
     wp.forEach(p => {
       const c = wardMap[p.ward]?.cls || 'hallway';
       const d = days(p.date);
+      const noHistory = !HISTORY_FIELDS.some(([k]) => (p[k]||'').trim());
       html += `<div class="patient-card${p.priority?' priority':''}" onclick="openEditModal('${p.id}')">
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
             <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
-            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}
+            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}${noHistory?'<span class="no-history-pill">⚠ NO HISTORY</span>':''}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
@@ -1567,7 +1577,7 @@ function renderPatients() {
         ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
-          <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
+          <button class="btn btn-outline btn-sm${noHistory?' history-btn-warn':''}" onclick="openHistoryModal('${p.id}')">📜 History${noHistory?' ⚠':''}</button>
           <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
           <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}')">📄 Med Cert</button>
           <button class="btn btn-outline btn-sm" onclick="openReferPrompt('${p.id}')">🔁 Refer</button>
@@ -1597,6 +1607,11 @@ function openAdmitModal() {
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('f-physician').value = currentDoctorName;
   document.getElementById('history-pe-section').style.display = '';
+  document.getElementById('soap-section').style.display = 'none';
+  document.getElementById('labs-results-group').style.display = '';
+  document.getElementById('labs-results-toggle-btn').style.display = '';
+  document.getElementById('f-labs').style.display = 'none';
+  document.getElementById('labs-results-toggle-btn').textContent = '＋ Lab results available?';
   document.getElementById('patient-modal').classList.add('open');
   updateMedsPreview('f-meds','f-meds-preview');
   updateMedsPreview('f-plan','f-plan-preview');
@@ -1612,6 +1627,10 @@ function openEditModal(id) {
   });
   document.getElementById('f-priority').checked = !!p.priority;
   document.getElementById('history-pe-section').style.display = 'none';
+  document.getElementById('soap-section').style.display = '';
+  document.getElementById('labs-results-group').style.display = '';
+  document.getElementById('labs-results-toggle-btn').style.display = 'none';
+  document.getElementById('f-labs').style.display = '';
   document.getElementById('patient-modal').classList.add('open');
   updateMedsPreview('f-meds','f-meds-preview');
   updateMedsPreview('f-plan','f-plan-preview');
@@ -1623,6 +1642,14 @@ function clearForm() {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
+}
+
+function toggleLabsResults() {
+  const ta = document.getElementById('f-labs');
+  const btn = document.getElementById('labs-results-toggle-btn');
+  const collapsed = ta.style.display === 'none';
+  ta.style.display = collapsed ? '' : 'none';
+  btn.textContent = collapsed ? '▾ Hide Lab Results' : '＋ Lab results available?';
 }
 
 function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
@@ -1655,6 +1682,9 @@ async function savePatient() {
   // History & PE is captured once at admission; the edit form never shows/touches it — carry it forward
   if (!existingId) {
     ['admDx','cc','hpi','pmh','psh','ros','pe'].forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
+    // Admit form hides Diagnosis/Assessment & Signs and Symptoms — day 1 defaults to the admitting Dx/CC
+    data.dx = data.admDx;
+    data.ss = data.cc;
   } else {
     const old = patients[existingId] || {};
     ['admDx','cc','hpi','pmh','psh','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
@@ -1842,7 +1872,7 @@ async function printAbstract() {
   const logoUrl = new URL('logo.png', location.href).href;
 
   const histRows = HISTORY_FIELDS.map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
-  const chartRows = [['ss','Signs & Symptoms'],['labsOrdered','Labs Ordered/Pending'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
+  const chartRows = [['ss','Signs & Symptoms'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
     .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(expandIfMeds(k,p[k]))}</div></div>` : '').join('');
 
   const body = `
