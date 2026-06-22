@@ -240,11 +240,11 @@
     <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Staff sign-in required</div>
     <div class="form-group" style="margin-bottom:14px">
       <label>Email</label>
-      <input type="email" id="login-email" placeholder="you@hospital.com" autocomplete="username">
+      <input type="email" id="login-email" placeholder="you@hospital.com" autocomplete="off">
     </div>
     <div class="form-group" style="margin-bottom:18px">
       <label>Password</label>
-      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div id="login-error" style="display:none;font-size:13px;color:var(--danger);margin-bottom:14px"></div>
     <div id="login-msg" style="display:none;font-size:13px;color:#34d399;margin-bottom:14px"></div>
@@ -252,6 +252,20 @@
     <div style="text-align:center;margin-top:14px">
       <a href="#" onclick="doReset();return false" style="font-size:13px;color:var(--text2);text-decoration:none">Forgot password?</a>
     </div>
+  </div>
+</div>
+
+<!-- Restored-session check — shown when the browser auto-restores a prior sign-in (e.g. on page load) rather than after a fresh login, so the wrong doctor can't silently inherit the previous one's session -->
+<div id="session-confirm-screen" style="position:fixed;inset:0;background:var(--bg);z-index:2000;display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:32px;box-shadow:var(--shadow-lg)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <img class="logo-icon" src="logo.png" alt="CLLMMH seal">
+      <div style="font-weight:600;font-size:16px;line-height:1.25">Congressman Lamberto L. Macias Hospital Census</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin:18px 0 22px">This browser is still signed in as:</div>
+    <div id="confirm-doctor-name" style="font-weight:700;font-size:18px;margin-bottom:22px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="confirmContinueSession()">Yes, that's me — Continue</button>
+    <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="confirmNotMe()">No, sign me out</button>
   </div>
 </div>
 
@@ -994,15 +1008,27 @@ window.addEventListener('load', () => {
         currentDoctorName = doctorName(user.email);
         document.getElementById('doctor-name').textContent = currentDoctorName;
         document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = '';
-        startCensus();
-        startIdleWatch();
+        if (freshLogin) {
+          // just typed their own credentials this visit — no need to re-confirm
+          freshLogin = false;
+          document.getElementById('session-confirm-screen').style.display = 'none';
+          document.getElementById('main-app').style.display = '';
+          startCensus();
+          startIdleWatch();
+        } else {
+          // session was auto-restored (page load on a shared computer) — make the
+          // signed-in doctor visible and require an explicit click before granting access
+          document.getElementById('main-app').style.display = 'none';
+          document.getElementById('confirm-doctor-name').textContent = currentDoctorName || currentUserEmail;
+          document.getElementById('session-confirm-screen').style.display = 'flex';
+        }
       } else {
         currentUserEmail = '';
         currentDoctorName = '';
         document.getElementById('doctor-name').textContent = '';
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('main-app').style.display = 'none';
+        document.getElementById('session-confirm-screen').style.display = 'none';
         stopIdleWatch();
       }
     });
@@ -1409,6 +1435,12 @@ async function runNewRound(mode, all) {
 
 function closeNewRoundModal() { document.getElementById('newround-modal').classList.remove('open'); }
 
+// Set right before a fresh sign-in attempt so onAuthStateChanged can tell "just typed their own
+// credentials" apart from "browser auto-restored a previous session" — only the latter needs the
+// session-confirm gate, since otherwise a doctor who never signed out leaves the next person
+// silently logged in as them on a shared computer.
+let freshLogin = false;
+
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw = document.getElementById('login-password').value;
@@ -1417,13 +1449,26 @@ function doLogin() {
   err.style.display = 'none';
   if (!email || !pw) { err.textContent = 'Enter email and password.'; err.style.display = 'block'; return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
+  freshLogin = true;
   firebase.auth().signInWithEmailAndPassword(email, pw)
     .catch(e => {
+      freshLogin = false;
       const bad = ['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'];
       err.textContent = bad.includes(e.code) ? 'Incorrect email or password.' : ('Login failed: ' + e.message);
       err.style.display = 'block';
     })
     .finally(() => { btn.disabled = false; btn.textContent = 'Sign In'; });
+}
+
+function confirmContinueSession() {
+  document.getElementById('session-confirm-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = '';
+  startCensus();
+  startIdleWatch();
+}
+function confirmNotMe() {
+  document.getElementById('session-confirm-screen').style.display = 'none';
+  firebase.auth().signOut();
 }
 
 function doReset() {
