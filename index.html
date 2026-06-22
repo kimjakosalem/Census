@@ -240,11 +240,11 @@
     <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Staff sign-in required</div>
     <div class="form-group" style="margin-bottom:14px">
       <label>Email</label>
-      <input type="email" id="login-email" placeholder="you@hospital.com" autocomplete="off">
+      <input type="text" inputmode="email" id="login-email" name="ce-user-field" placeholder="you@hospital.com" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
     </div>
     <div class="form-group" style="margin-bottom:18px">
       <label>Password</label>
-      <input type="password" id="login-password" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" id="login-password" name="ce-pass-field" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div id="login-error" style="display:none;font-size:13px;color:var(--danger);margin-bottom:14px"></div>
     <div id="login-msg" style="display:none;font-size:13px;color:#34d399;margin-bottom:14px"></div>
