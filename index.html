@@ -444,68 +444,76 @@
         </div>
         <div id="history-pe-section">
           <div class="form-group full">
-            <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
+            <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
             <textarea id="f-cc" placeholder="Reason for admission, in the patient's own words..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>History of Present Illness (HPI)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-hpi')">📋 Copy</button></div>
+            <div class="label-row"><label>History of Present Illness (HPI)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-hpi')">📋 Copy</button></div>
             <textarea id="f-hpi" placeholder="Onset, duration, course, associated symptoms..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Past Medical History (PMH)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-pmh')">📋 Copy</button></div>
+            <div class="label-row"><label>Past Medical History (PMH)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-pmh')">📋 Copy</button></div>
             <textarea id="f-pmh" placeholder="Prior illnesses, hospitalizations, comorbidities..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Personal &amp; Social History (PSH)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-psh')">📋 Copy</button></div>
+            <div class="label-row"><label>Personal &amp; Social History (PSH)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-psh')">📋 Copy</button></div>
             <textarea id="f-psh" placeholder="Smoking, alcohol, occupation, living situation, etc..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Review of Systems (ROS)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ros')">📋 Copy</button></div>
+            <div class="label-row"><label>Review of Systems (ROS)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-ros')">📋 Copy</button></div>
             <textarea id="f-ros" placeholder="Pertinent positives/negatives by system..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Physical Examination (PE)</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-pe')">📋 Copy</button></div>
+            <div class="label-row"><label>Physical Examination (PE)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-pe')">📋 Copy</button></div>
             <textarea id="f-pe" placeholder="Findings on physical exam..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
+            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
             <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
           </div>
         </div>
         <div id="soap-section">
           <div class="form-group full">
-            <div class="label-row"><label>Signs &amp; Symptoms</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-ss')">📋 Copy</button></div>
+            <div class="label-row"><label>Signs &amp; Symptoms</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-ss')">📋 Copy</button></div>
             <textarea id="f-ss" placeholder="Chief complaints and presenting symptoms..."></textarea>
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
+            <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
             <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
           </div>
         </div>
+        <div class="form-group">
+          <div class="label-row"><label>Diet</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-diet')">📋 Copy</button></div>
+          <input type="text" id="f-diet" placeholder="e.g. DAT, NPO, Low salt low fat">
+        </div>
+        <div class="form-group">
+          <div class="label-row"><label>IVF</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-ivf')">📋 Copy</button></div>
+          <input type="text" id="f-ivf" placeholder="e.g. PNSS 1L x 8h">
+        </div>
         <div class="form-group full">
-          <div class="label-row"><label>Labs Ordered / Pending</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labsOrdered')">📋 Copy</button></div>
+          <div class="label-row"><label>Labs Ordered / Pending</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-labsOrdered')">📋 Copy</button></div>
           <textarea id="f-labsOrdered" placeholder="Tests ordered, awaiting results..."></textarea>
         </div>
         <div class="form-group full" id="labs-results-group">
           <div class="label-row">
             <label>Lab Results</label>
-            <button type="button" class="btn btn-outline btn-sm" id="labs-results-toggle-btn" onclick="toggleLabsResults()">＋ Lab results available?</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-labs')">📋 Copy</button>
+            <button type="button" class="btn btn-outline btn-sm" id="labs-results-toggle-btn" tabindex="-1" onclick="toggleLabsResults()">＋ Lab results available?</button>
+            <button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-labs')">📋 Copy</button>
           </div>
           <textarea id="f-labs" placeholder="CBC, chemistry, cultures, imaging..."></textarea>
         </div>
         <div class="form-group full">
-          <div class="label-row"><label>Medications / Orders</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-meds')">📋 Copy</button></div>
+          <div class="label-row"><label>Medications / Orders</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-meds')">📋 Copy</button></div>
           <textarea id="f-meds" placeholder="Current medications and standing orders..." oninput="updateMedsPreview('f-meds','f-meds-preview')"></textarea>
           <div id="f-meds-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
-          <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
+          <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
           <textarea id="f-plan" placeholder="Management plan, referrals, procedures..." oninput="updateMedsPreview('f-plan','f-plan-preview')"></textarea>
           <div id="f-plan-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
-          <div class="label-row"><label>Remarks / Notes</label><button type="button" class="btn btn-outline btn-sm" onclick="copyHistoryField('f-remarks')">📋 Copy</button></div>
+          <div class="label-row"><label>Remarks / Notes</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-remarks')">📋 Copy</button></div>
           <textarea id="f-remarks" placeholder="Code status, family contacts, other notes..." oninput="updateMedsPreview('f-remarks','f-remarks-preview')"></textarea>
           <div id="f-remarks-preview" class="meds-preview" style="display:none"></div>
         </div>
@@ -513,6 +521,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" id="print-admission-btn" onclick="printAdmissionPacket()" title="Print History & PE + Doctor's Order">🖨️ Print</button>
       <button class="btn btn-primary" onclick="savePatient()">Save Patient</button>
     </div>
   </div>
@@ -529,6 +538,7 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeHistoryModal()">Close</button>
       <button class="btn btn-outline" onclick="copyAllHistory()">📋 Copy All</button>
+      <button class="btn btn-outline" onclick="printHistoryFromModal()" title="Print History &amp; PE">🖨️ Print</button>
       <button class="btn btn-primary" onclick="saveHistoryModal()">Save Changes</button>
     </div>
   </div>
@@ -1321,7 +1331,7 @@ function openHistoryModal(id) {
     <div class="form-group full" style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <label style="margin:0">${label}</label>
-        <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px" onclick="copyHistoryField('hist-${k}')">📋 Copy</button>
+        <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px" tabindex="-1" onclick="copyHistoryField('hist-${k}')">📋 Copy</button>
       </div>
       <textarea id="hist-${k}">${esc(p[k]||'')}</textarea>
     </div>`).join('');
@@ -1355,6 +1365,155 @@ async function saveHistoryModal() {
   await db.ref('patients/'+id).update(updates);
   showToast('✓ History & PE updated');
   closeHistoryModal();
+}
+
+/* ===== HISTORY & PE / DOCTOR'S ORDER PRINTING ===== */
+const HNP_PRINT_FIELDS = [['cc','Chief Complaint'],['hpi','History of Present Illness (HPI)'],['pmh','Past Medical History (PMH)'],['psh','Personal & Social History (PSH)'],['ros','Review of Systems (ROS)'],['pe','Physical Examination (PE)'],['admDx','Diagnosis']];
+const PRINT_STYLE = `
+    *{box-sizing:border-box}
+    body{font-family:Georgia,'Times New Roman',serif;font-size:9.3pt;margin:9mm 11mm;color:#1a1a1a;line-height:1.3}
+    .abs-header{display:flex;align-items:center;gap:10pt;border-bottom:2pt solid #1a1a1a;padding-bottom:7pt;margin-bottom:9pt}
+    .abs-header img{width:38pt;height:38pt;object-fit:contain;flex-shrink:0}
+    .abs-header-text{flex:1}
+    .abs-hospital{font-size:12.5pt;font-weight:bold;letter-spacing:.2pt}
+    .abs-address{font-size:7.5pt;color:#555;margin-top:1pt}
+    .abs-sub{font-size:8.5pt;color:#444;font-style:italic;margin-top:2pt}
+    .abs-date{font-size:7.5pt;text-align:right;color:#444;white-space:nowrap}
+    .abs-demo{background:#f7f7f5;border:.75pt solid #ddd;border-radius:4pt;padding:6pt 12pt;margin-bottom:9pt}
+    .abs-demo-name{font-size:11pt;font-weight:bold;margin-bottom:3pt}
+    .abs-demo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4pt 8pt;font-size:8.2pt}
+    .abs-demo-label{display:block;font-size:6.8pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#777}
+    .abs-section-title{font-size:9.8pt;font-weight:bold;text-transform:uppercase;letter-spacing:.4pt;color:#1a1a1a;border-bottom:1pt solid #1a1a1a;margin:9pt 0 5pt;padding-bottom:3pt}
+    .abs-section-box{padding-left:2pt}
+    .abs-field{margin-bottom:7pt;page-break-inside:avoid}
+    .abs-label{font-size:7.6pt;font-weight:bold;text-transform:uppercase;letter-spacing:.3pt;color:#555;margin-bottom:0}
+    .abs-value{font-size:8.8pt;line-height:1.35;white-space:pre-line}
+    .abs-empty{font-size:8.6pt;color:#888;font-style:italic}
+    .ord-list{margin:0;padding-left:2pt;list-style:none}
+    .ord-list li{font-size:8.8pt;line-height:1.5;margin-bottom:5pt;white-space:pre-line}
+    .abs-sig-row{margin-top:18pt;display:flex;justify-content:center;gap:30pt}
+    .abs-sig-block{flex:1;max-width:280px;text-align:center}
+    .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:4pt}
+    .abs-sig-name{font-size:9.3pt;font-weight:bold}
+    .abs-sig-title{font-size:7.8pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
+    .print-page{page-break-before:always}
+    .print-page:first-child{page-break-before:auto}
+    @media print{@page{margin:9mm 11mm;size:letter portrait}}`;
+
+function printPageHeaderHTML(subtitle) {
+  const logoUrl = new URL('logo.png', location.href).href;
+  const dateStr = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  return `<div class="abs-header">
+    <img src="${logoUrl}" alt="logo">
+    <div class="abs-header-text">
+      <div class="abs-hospital">Congressman Lamberto L. Macias Memorial Hospital</div>
+      <div class="abs-address">Poblacion III, Siaton, Negros Oriental</div>
+      <div class="abs-sub">${esc(subtitle)}</div>
+    </div>
+    <div class="abs-date">${dateStr}</div>
+  </div>`;
+}
+
+function printDemoBlockHTML(d) {
+  return `<div class="abs-demo">
+    <div class="abs-demo-name">${esc(d.name||'—')}</div>
+    <div class="abs-demo-grid">
+      <div><span class="abs-demo-label">Age/Sex</span>${d.age||'—'} y/o ${esc(d.sex||'—')}</div>
+      <div><span class="abs-demo-label">Ward</span>${esc(wardMap[d.ward]?.label||d.ward||'—')}</div>
+      <div><span class="abs-demo-label">Bed</span>${esc(d.room||'—')}</div>
+      <div><span class="abs-demo-label">Date Admitted</span>${fmtDate(d.date)}</div>
+      <div><span class="abs-demo-label">Physician</span>${esc(d.physician||'—')}</div>
+    </div>
+  </div>`;
+}
+
+function printSigBlockHTML(d) {
+  return `<div class="abs-sig-row">
+    <div class="abs-sig-block">
+      <div class="abs-sig-line"></div>
+      <div class="abs-sig-name">${esc(d.physician || '—')}</div>
+      <div class="abs-sig-title">Admitting Physician</div>
+    </div>
+  </div>`;
+}
+
+function buildHistoryPEPageHTML(d) {
+  const rows = HNP_PRINT_FIELDS.map(([k,label]) => d[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(d[k])}</div></div>` : '').join('');
+  return `<div class="print-page">
+    ${printPageHeaderHTML('History & Physical Examination')}
+    ${printDemoBlockHTML(d)}
+    <div class="abs-section-box">${rows || '<div class="abs-empty">Not recorded.</div>'}</div>
+    ${printSigBlockHTML(d)}
+  </div>`;
+}
+
+function buildDoctorsOrderPageHTML(d) {
+  const now = new Date();
+  const dateTimeStr = fmtDate(d.date) + ' — ' + now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+  const bedOrWard = d.room || wardMap[d.ward]?.label || d.ward || '—';
+  const physicianName = (d.physician||'').trim();
+  const physicianWithTitle = physicianName ? (/^dr\.?\s/i.test(physicianName) ? physicianName : `Dr. ${physicianName}`) : '—';
+  const orderLines = [
+    `Admit to ${bedOrWard} under the service of ${physicianWithTitle}.`,
+    'Secure consent to care and management.',
+    d.admDx ? `Admitting Diagnosis: ${d.admDx}` : '',
+    d.diet ? `Diet: ${d.diet}` : '',
+    d.ivf ? `IVF: ${d.ivf}` : '',
+    d.labsOrdered ? `Diagnostics/Imaging: ${d.labsOrdered}` : '',
+    d.meds ? `Therapeutics: ${expandMeds(d.meds)}` : '',
+    d.plan ? expandMeds(d.plan) : '',
+    'Monitoring: Vital signs q4h, Intake and output q shift.',
+    'Refer accordingly.'
+  ].filter(Boolean);
+  const items = orderLines.map(l => `<li>${esc(l)}</li>`).join('');
+  return `<div class="print-page">
+    ${printPageHeaderHTML("Doctor's Order")}
+    ${printDemoBlockHTML(d)}
+    <div class="abs-field" style="margin-bottom:10pt"><div class="abs-label">Date &amp; Time</div><div class="abs-value">${esc(dateTimeStr)}</div></div>
+    <ul class="ord-list">${items}</ul>
+    ${printSigBlockHTML(d)}
+  </div>`;
+}
+
+function openPrintWindow(bodyHtml, title) {
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title>
+  <style>${PRINT_STYLE}</style></head><body>${bodyHtml}</body></html>`);
+  w.document.close(); w.focus();
+  setTimeout(() => w.print(), 600);
+}
+
+// History modal — first page only (no Doctor's Order), reading whatever is currently in the
+// textareas so unsaved edits print too (same source as Copy All).
+function printHistoryFromModal() {
+  const id = document.getElementById('history-id').value;
+  const p = patients[id]; if (!p) return;
+  const d = { name: p.name, age: p.age, sex: p.sex, ward: p.ward, room: p.room, date: p.date, physician: p.physician };
+  HNP_PRINT_FIELDS.forEach(([k]) => { d[k] = document.getElementById('hist-'+k).value.trim(); });
+  openPrintWindow(buildHistoryPEPageHTML(d), `History & PE — ${d.name||''}`);
+}
+
+// Admit New Patient form — both pages, read straight from the form fields since the patient may
+// not be saved yet.
+function printAdmissionPacket() {
+  const d = {
+    name: document.getElementById('f-name').value.trim(),
+    age: document.getElementById('f-age').value,
+    sex: document.getElementById('f-sex').value,
+    ward: document.getElementById('f-ward').value,
+    room: document.getElementById('f-room').value.trim(),
+    date: document.getElementById('f-date').value,
+    physician: document.getElementById('f-physician').value.trim(),
+    diet: document.getElementById('f-diet').value.trim(),
+    ivf: document.getElementById('f-ivf').value.trim(),
+    labsOrdered: document.getElementById('f-labsOrdered').value.trim(),
+    meds: document.getElementById('f-meds').value.trim(),
+    plan: document.getElementById('f-plan').value.trim(),
+    remarks: document.getElementById('f-remarks').value.trim(),
+  };
+  HNP_PRINT_FIELDS.forEach(([k]) => { const el = document.getElementById('f-'+k); if (el) d[k] = el.value.trim(); });
+  if (!d.name) { showToast('⚠️ Enter the patient name first'); return; }
+  openPrintWindow(buildHistoryPEPageHTML(d) + buildDoctorsOrderPageHTML(d), `Admission Record — ${d.name}`);
 }
 
 async function saveRoundsNotes() {
@@ -1657,6 +1816,7 @@ function openAdmitModal() {
   document.getElementById('labs-results-toggle-btn').style.display = '';
   document.getElementById('f-labs').style.display = 'none';
   document.getElementById('labs-results-toggle-btn').textContent = '＋ Lab results available?';
+  document.getElementById('print-admission-btn').style.display = '';
   document.getElementById('patient-modal').classList.add('open');
   updateMedsPreview('f-meds','f-meds-preview');
   updateMedsPreview('f-plan','f-plan-preview');
@@ -1667,7 +1827,7 @@ function openEditModal(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
   document.getElementById('edit-id').value = id;
-  ['name','age','sex','date','ward','room','physician','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
   document.getElementById('f-priority').checked = !!p.priority;
@@ -1676,6 +1836,7 @@ function openEditModal(id) {
   document.getElementById('labs-results-group').style.display = '';
   document.getElementById('labs-results-toggle-btn').style.display = 'none';
   document.getElementById('f-labs').style.display = '';
+  document.getElementById('print-admission-btn').style.display = 'none';
   document.getElementById('patient-modal').classList.add('open');
   updateMedsPreview('f-meds','f-meds-preview');
   updateMedsPreview('f-plan','f-plan-preview');
@@ -1683,7 +1844,7 @@ function openEditModal(id) {
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
@@ -1712,6 +1873,8 @@ async function savePatient() {
     sex: document.getElementById('f-sex').value,
     room: document.getElementById('f-room').value.trim(),
     physician: document.getElementById('f-physician').value.trim(),
+    diet: document.getElementById('f-diet').value.trim(),
+    ivf: document.getElementById('f-ivf').value.trim(),
     ss: document.getElementById('f-ss').value.trim(),
     dx: document.getElementById('f-dx').value.trim(),
     labsOrdered: document.getElementById('f-labsOrdered').value.trim(),
