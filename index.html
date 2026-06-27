@@ -281,7 +281,7 @@
       <span class="status-text" id="conn-text">Connecting...</span>
       <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-full"> Print Endorsement</span></button>
       <button class="btn btn-outline btn-sm" id="rounds-toggle" onclick="toggleRoundsView()" title="Rounds Mode">🩺<span class="btn-label-full"> Rounds</span></button>
-      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Recently Discharged">🗄️<span class="btn-label-full"> Recently Discharged</span></button>
+      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Archive">🗄️<span class="btn-label-full"> Archive</span></button>
       <button class="btn btn-outline btn-sm" id="medabbrev-toggle" onclick="openMedAbbrevModal()" title="Medication Abbreviations">💊<span class="btn-label-full"> Med Abbrev.</span></button>
       <button class="btn btn-primary" onclick="openAdmitModal()" title="Admit Patient">+<span class="btn-label-full"> Admit Patient</span></button>
       <button class="btn btn-outline btn-sm" onclick="doLogout()" title="Sign Out">🔒<span class="btn-label-full"> Sign Out</span></button>
@@ -322,6 +322,7 @@
           <div class="tab" data-w="OBS" onclick="setFilter('OBS',this)">OBS</div>
           <div class="tab" data-w="OB" onclick="setFilter('OB',this)">OB Ward</div>
         </div>
+        <button class="btn btn-outline btn-sm" id="priority-toggle" onclick="togglePriorityOnly()" title="Show only priority/critical patients across all wards">⚡<span class="btn-label-full"> Priority Only</span></button>
       </div>
       <div style="font-size:12px;color:var(--text3)" id="last-updated"></div>
     </div>
@@ -334,8 +335,8 @@
     <!-- Recently Discharged view (toggled) -->
     <div id="discharged-view" style="display:none">
       <div class="ward-header" style="background:var(--surface2);color:var(--text2);border-left:3px solid var(--text3);margin-bottom:14px">
-        <span>🗄️ Recently Discharged</span>
-        <span class="ward-count">Auto-deletes 48 hours after discharge</span>
+        <span>🗄️ Archive</span>
+        <span class="ward-count">Discharged patient records</span>
       </div>
       <div class="toolbar">
         <div class="search-box" style="max-width:340px">
@@ -466,6 +467,14 @@
           <div class="form-group full">
             <div class="label-row"><label>Physical Examination (PE)</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-pe')">📋 Copy</button></div>
             <textarea id="f-pe" placeholder="Findings on physical exam..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" id="f-height" placeholder="e.g. 165" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="f-weight" placeholder="e.g. 60" min="0" step="0.1">
           </div>
           <div class="form-group full">
             <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
@@ -641,9 +650,36 @@
     <div class="modal-body">
       <input type="hidden" id="refer-id">
       <div class="form-grid">
-        <div class="form-group full">
+        <div class="form-group full" style="margin-bottom:0">
           <label>Latest Vital Signs</label>
-          <textarea id="refer-vitals" placeholder="BP, HR, RR, Temp, O2 sat, etc., taken just before referral..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>BP (mmHg)</label>
+          <input type="text" id="refer-bp" placeholder="e.g. 120/80">
+        </div>
+        <div class="form-group">
+          <label>Temp (°C)</label>
+          <input type="text" id="refer-temp" placeholder="e.g. 37.0">
+        </div>
+        <div class="form-group">
+          <label>HR (bpm)</label>
+          <input type="text" id="refer-hr" placeholder="e.g. 88">
+        </div>
+        <div class="form-group">
+          <label>RR (cpm)</label>
+          <input type="text" id="refer-rr" placeholder="e.g. 20">
+        </div>
+        <div class="form-group">
+          <label>O2 Sat (%)</label>
+          <input type="text" id="refer-o2" placeholder="e.g. 98%">
+        </div>
+        <div class="form-group">
+          <label>Height (cm)</label>
+          <input type="number" id="refer-height" placeholder="e.g. 165" min="0" step="0.1">
+        </div>
+        <div class="form-group full">
+          <label>Weight (kg)</label>
+          <input type="number" id="refer-weight" placeholder="e.g. 60" min="0" step="0.1">
         </div>
         <div class="form-group full">
           <label>Latest Physical Exam</label>
@@ -902,9 +938,13 @@ const MED_ABBREV_MAP = {
   'kcl': 'Potassium Chloride',
   'mucosolvan': 'Ambroxol (Mucosolvan)',
 };
-// admin-editable additions/overrides, synced from Firebase (medAbbrev/), merged on top of the built-in list above
+// admin-editable additions/overrides, synced from Firebase (medAbbrev/), merged on top of the built-in list above.
+// An empty-string value is a tombstone: it means the admin disabled that built-in default.
 let customMedAbbrev = {};
-function lookupMedAbbrev(key) { return customMedAbbrev[key] || MED_ABBREV_MAP[key]; }
+function lookupMedAbbrev(key) {
+  if (Object.prototype.hasOwnProperty.call(customMedAbbrev, key)) return customMedAbbrev[key] || null;
+  return MED_ABBREV_MAP[key] || null;
+}
 function expandMeds(text) {
   if (!text) return text;
   return text.replace(/[A-Za-z][A-Za-z0-9]*(?:\+[A-Za-z][A-Za-z0-9]*)*/g, token => {
@@ -929,7 +969,7 @@ function updateMedsPreview(srcId, outId) {
 function openMedAbbrevModal() {
   const admin = isAdmin();
   document.getElementById('medabbrev-desc').textContent = admin
-    ? 'Abbreviations doctors type while charting (e.g. "Azith") are expanded to their full name in the Referral, Medical Abstract, Endorsement printouts, and patient cards — matching is not case-sensitive. Entries you add here apply for everyone and sync immediately. If a drug has more than one common shorthand (e.g. PCM and Para both mean Paracetamol), separate them with commas to add them both at once.'
+    ? 'Abbreviations doctors type while charting (e.g. "Azith") are expanded to their full name in the Referral, Medical Abstract, Endorsement printouts, and patient cards — matching is not case-sensitive. Entries you add here apply for everyone and sync immediately. If a drug has more than one common shorthand (e.g. PCM and Para both mean Paracetamol), separate them with commas to add them both at once. You can also edit (✏️) or disable (🗑️) any built-in default below — disabled ones can be restored.'
     : 'Search below to check whether a medication abbreviation is already registered. Recognized abbreviations are automatically expanded to their full name on cards, Referral, Medical Abstract, and Endorsement printouts. Only Dr. Kim Jakosalem can add or remove entries — let her know if one\'s missing.';
   document.getElementById('medabbrev-edit-controls').style.display = admin ? '' : 'none';
   document.getElementById('ma-abbrev').value = '';
@@ -947,24 +987,34 @@ function renderMedAbbrevList() {
   const search = (document.getElementById('medabbrev-search')?.value || '').toLowerCase();
   document.getElementById('medabbrev-search')?.closest('.search-box').classList.toggle('has-text', !!search);
   const matches = (k) => !search || k.includes(search) || (lookupMedAbbrev(k)||'').toLowerCase().includes(search);
+  const hasOverride = k => Object.prototype.hasOwnProperty.call(customMedAbbrev, k);
   const customKeys = Object.keys(customMedAbbrev).filter(matches).sort();
-  const builtinKeys = Object.keys(MED_ABBREV_MAP).filter(k => !customMedAbbrev[k]).filter(matches).sort();
+  const builtinKeys = Object.keys(MED_ABBREV_MAP).filter(k => !hasOverride(k)).filter(matches).sort();
   let html = '';
   if (customKeys.length) {
-    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Added by staff</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Added / modified by staff</div>';
     customKeys.forEach(k => {
+      const v = customMedAbbrev[k];
+      const isTombstone = !v;
       html += `<div class="card-field" style="align-items:center">
         <span class="field-label" style="min-width:90px">${esc(k)}</span>
-        <span class="field-value">${esc(customMedAbbrev[k])}</span>
-        ${admin ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="deleteMedAbbrev('${esc(k)}')">🗑️</button>` : ''}
+        <span class="field-value">${isTombstone ? `<em style="color:var(--text3)">disabled${MED_ABBREV_MAP[k] ? ' (was: '+esc(MED_ABBREV_MAP[k])+')' : ''}</em>` : esc(v)}</span>
+        ${admin ? (isTombstone
+          ? `<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="deleteMedAbbrev('${esc(k)}')">↺ Restore</button>`
+          : `<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="editMedAbbrev('${esc(k)}')">✏️</button><button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="deleteMedAbbrev('${esc(k)}')">🗑️</button>`
+        ) : ''}
       </div>`;
     });
     html += '<div style="height:10px"></div>';
   }
   if (builtinKeys.length) {
-    html += `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Built-in defaults${admin?' (edit via code/skill)':''}</div>`;
+    html += `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Built-in defaults</div>`;
     builtinKeys.forEach(k => {
-      html += `<div class="card-field"><span class="field-label" style="min-width:90px">${esc(k)}</span><span class="field-value">${esc(MED_ABBREV_MAP[k])}</span></div>`;
+      html += `<div class="card-field" style="align-items:center">
+        <span class="field-label" style="min-width:90px">${esc(k)}</span>
+        <span class="field-value">${esc(MED_ABBREV_MAP[k])}</span>
+        ${admin ? `<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="editMedAbbrev('${esc(k)}')">✏️</button><button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="disableBuiltinAbbrev('${esc(k)}')">🗑️</button>` : ''}
+      </div>`;
     });
   }
   if (!customKeys.length && !builtinKeys.length) {
@@ -987,14 +1037,26 @@ async function addMedAbbrev() {
   showToast(abbrevs.length > 1 ? `✓ ${abbrevs.length} abbreviations saved` : '✓ Abbreviation saved');
 }
 
+function editMedAbbrev(key) {
+  document.getElementById('ma-abbrev').value = key;
+  document.getElementById('ma-fullname').value = lookupMedAbbrev(key) || '';
+  document.getElementById('ma-abbrev').focus();
+}
+
+async function disableBuiltinAbbrev(key) {
+  if (!confirm(`Disable the built-in abbreviation "${key}"? It will stop auto-expanding. You can restore it later.`)) return;
+  await db.ref('medAbbrev/' + key).set('');
+  showToast('Built-in abbreviation disabled');
+}
+
 async function deleteMedAbbrev(key) {
+  // removing the override either deletes a staff-added entry, or restores a disabled built-in default
   await db.ref('medAbbrev/' + key).remove();
   showToast('Abbreviation removed');
 }
 
-let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null;
-let discharged = {}, showingDischarged = false, showingRounds = false;
-const RETENTION_MS = 48 * 60 * 60 * 1000;   // discharged patients auto-delete after 48 hours
+let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null, priorityOnly = false;
+let discharged = {}, showingDischarged = false, showingRounds = false, archiveLoaded = false;
 
 /* ===== FIREBASE — HARDCODED CONFIG ===== */
 const firebaseConfig = {
@@ -1080,11 +1142,6 @@ function startCensus() {
     document.getElementById('last-updated').textContent =
       'Synced ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
   });
-  db.ref('discharged').on('value', snap => {
-    discharged = snap.val() || {};
-    pruneDischarged();
-    renderDischarged();
-  });
   db.ref('.info/connected').on('value', snap => {
     setConn(snap.val(), snap.val() ? 'Live — synced' : 'Reconnecting...');
   });
@@ -1092,21 +1149,30 @@ function startCensus() {
     customMedAbbrev = snap.val() || {};
     if (document.getElementById('medabbrev-modal').classList.contains('open')) renderMedAbbrevList();
   });
-  // safety sweep while the app stays open (auto-delete doesn't depend on a server)
-  setInterval(pruneDischarged, 10 * 60 * 1000);
 }
 
-/* ===== RECENTLY DISCHARGED ===== */
-function pruneDischarged() {
-  const now = Date.now();
-  Object.entries(discharged).forEach(([id, p]) => {
-    if (!p.dischargedAt || now - p.dischargedAt > RETENTION_MS) {
-      db.ref('discharged/' + id).remove();
-    }
+/* ===== ARCHIVE (formerly Recently Discharged) =====
+   Loaded on demand and capped, instead of an always-on listener, so the full discharge
+   history doesn't sit in browser memory for the whole session — only while the view is open. */
+function loadArchiveIfNeeded() {
+  if (archiveLoaded) return;
+  archiveLoaded = true;
+  document.getElementById('discharged-container').innerHTML = '<div class="loading"><div class="spinner"></div> Loading archive...</div>';
+  db.ref('discharged').orderByChild('dischargedAt').limitToLast(300).on('value', snap => {
+    discharged = snap.val() || {};
+    renderDischarged();
   });
+}
+function unloadArchive() {
+  if (!archiveLoaded) return;
+  db.ref('discharged').off();
+  archiveLoaded = false;
+  discharged = {};
 }
 
 function setView(view) {   // view = 'census' | 'discharged' | 'rounds'
+  const leavingDischarged = showingDischarged && view !== 'discharged';
+  const enteringDischarged = !showingDischarged && view === 'discharged';
   showingDischarged = view === 'discharged';
   showingRounds = view === 'rounds';
   document.getElementById('census-view').style.display = view === 'census' ? '' : 'none';
@@ -1118,10 +1184,11 @@ function setView(view) {   // view = 'census' | 'discharged' | 'rounds'
   const rbtn = document.getElementById('rounds-toggle');
   rbtn.classList.toggle('btn-primary', view === 'rounds');
   rbtn.classList.toggle('btn-outline', view !== 'rounds');
+  if (enteringDischarged) loadArchiveIfNeeded();
+  if (leavingDischarged) unloadArchive();
 }
 function toggleDischargedView() {
   setView(showingDischarged ? 'census' : 'discharged');
-  if (showingDischarged) renderDischarged();
 }
 function toggleRoundsView() {
   setView(showingRounds ? 'census' : 'rounds');
@@ -1139,13 +1206,13 @@ function renderDischarged() {
 
   const totalCount = Object.keys(discharged).length;
   document.getElementById('discharged-count').textContent =
-    totalCount ? `${totalCount} in holding${search ? ` · ${all.length} match` : ''}` : '';
+    totalCount ? `${totalCount} archived (most recent 300)${search ? ` · ${all.length} match` : ''}` : '';
 
   if (!all.length) {
     container.innerHTML = `<div class="empty-state">
       <div class="empty-icon">🗄️</div>
-      <div class="empty-title">${search ? 'No matching discharged patients' : 'No recently discharged patients'}</div>
-      <div style="font-size:13px;color:var(--text3)">Discharged patients appear here for 48 hours, then auto-delete.</div>
+      <div class="empty-title">${search ? 'No matching archived patients' : 'No archived patients yet'}</div>
+      <div style="font-size:13px;color:var(--text3)">Discharged patients are kept here for reference.</div>
     </div>`;
     return;
   }
@@ -1153,7 +1220,6 @@ function renderDischarged() {
   let html = '<div class="patients-grid">';
   all.forEach(p => {
     const c = wardMap[p.ward]?.cls || 'hallway';
-    const hrsLeft = Math.max(0, Math.ceil((RETENTION_MS - (Date.now() - (p.dischargedAt || 0))) / 3600000));
     const when = p.dischargedAt ? new Date(p.dischargedAt).toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     html += `<div class="patient-card" style="cursor:default">
       <div class="card-top">
@@ -1168,8 +1234,7 @@ function renderDischarged() {
       <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}</span></div>
       <div class="card-actions">
         <button class="btn btn-green btn-sm" onclick="restorePatient('${p.id}')">↩️ Re-admit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDischarged('${p.id}','${esc(p.name||'')}')">🗑️ Delete now</button>
-        <div class="days-badge">auto-deletes in ${hrsLeft}h</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteDischarged('${p.id}','${esc(p.name||'')}')">🗑️ Delete permanently</button>
       </div>
     </div>`;
   });
@@ -1188,7 +1253,7 @@ async function restorePatient(id) {
 }
 
 async function deleteDischarged(id, name) {
-  if (!confirm(`Permanently delete "${name}" from recently discharged? This cannot be undone.`)) return;
+  if (!confirm(`Permanently delete "${name}" from the archive? This cannot be undone.`)) return;
   await db.ref('discharged/' + id).remove();
   showToast('Record deleted');
 }
@@ -1322,6 +1387,19 @@ function fallbackCopy(text, msg) {
 
 /* ===== HISTORY & PE VIEW ===== */
 const HISTORY_FIELDS = [['admDx','Admitting Diagnosis'],['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['ros','ROS'],['pe','PE']];
+// snapshot of the orders entered at admission time (diet/ivf/etc continue to change via daily rounds,
+// but these adm* copies are frozen on day 1 so the original Doctor's Order can still be reviewed/printed)
+const ADMIT_ORDER_FIELDS = [['admDiet','Diet',false],['admIvf','IVF',false],['admLabsOrdered','Labs Ordered / Pending',false],['admMeds','Medications / Orders',true],['admPlan','Plan',true],['admRemarks','Remarks / Notes',true]];
+// [live field on the patient record, frozen admission-day snapshot field] — used when saving a new patient
+const ADMIT_ORDER_SNAPSHOT_PAIRS = [['diet','admDiet'],['ivf','admIvf'],['labsOrdered','admLabsOrdered'],['meds','admMeds'],['plan','admPlan'],['remarks','admRemarks']];
+
+function buildAdmitOrdersSectionHTML(p) {
+  const rows = ADMIT_ORDER_FIELDS.map(([k,label,expand]) => p[k] ? `<div class="card-field" style="margin-bottom:8px"><span class="field-label" style="min-width:140px">${label}</span><span class="field-value">${esc(expand?expandMeds(p[k]):p[k])}</span></div>` : '').join('');
+  return `<div style="margin-top:8px;padding-top:14px;border-top:1px solid var(--border)">
+    <div style="font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">📋 Admitting Orders <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(recorded at admission, read-only)</span></div>
+    ${rows || '<div style="font-size:13px;color:var(--text3);font-style:italic">Not recorded.</div>'}
+  </div>`;
+}
 
 function openHistoryModal(id) {
   const p = patients[id]; if (!p) return;
@@ -1334,7 +1412,7 @@ function openHistoryModal(id) {
         <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px" tabindex="-1" onclick="copyHistoryField('hist-${k}')">📋 Copy</button>
       </div>
       <textarea id="hist-${k}">${esc(p[k]||'')}</textarea>
-    </div>`).join('');
+    </div>`).join('') + buildAdmitOrdersSectionHTML(p);
   document.getElementById('history-modal').classList.add('open');
 }
 function closeHistoryModal() { document.getElementById('history-modal').classList.remove('open'); }
@@ -1490,7 +1568,11 @@ function printHistoryFromModal() {
   const p = patients[id]; if (!p) return;
   const d = { name: p.name, age: p.age, sex: p.sex, ward: p.ward, room: p.room, date: p.date, physician: p.physician };
   HNP_PRINT_FIELDS.forEach(([k]) => { d[k] = document.getElementById('hist-'+k).value.trim(); });
-  openPrintWindow(buildHistoryPEPageHTML(d), `History & PE — ${d.name||''}`);
+  let html = buildHistoryPEPageHTML(d);
+  if (ADMIT_ORDER_FIELDS.some(([k]) => p[k])) {
+    html += buildDoctorsOrderPageHTML({ ...d, diet: p.admDiet||'', ivf: p.admIvf||'', labsOrdered: p.admLabsOrdered||'', meds: p.admMeds||'', plan: p.admPlan||'' });
+  }
+  openPrintWindow(html, `History & PE — ${d.name||''}`);
 }
 
 // Admit New Patient form — both pages, read straight from the form fields since the patient may
@@ -1712,6 +1794,12 @@ function setFilter(f, el) {
   activateTab(el.closest('.filter-tabs'), f);
   renderPatients();
 }
+function togglePriorityOnly() {
+  priorityOnly = !priorityOnly;
+  document.getElementById('priority-toggle').classList.toggle('btn-primary', priorityOnly);
+  document.getElementById('priority-toggle').classList.toggle('btn-outline', !priorityOnly);
+  renderPatients();
+}
 function setRoundsFilter(f, el) {
   if (f === roundsFilter && f !== 'all') f = 'all';
   roundsFilter = f;
@@ -1728,7 +1816,8 @@ function renderPatients() {
   const filtered = all.filter(p => {
     const mw = currentFilter==='all' || p.ward===currentFilter;
     const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan].some(f=>(f||'').toLowerCase().includes(search));
-    return mw && ms;
+    const mp = !priorityOnly || p.priority;
+    return mw && ms && mp;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
     if (wa!==wb) return wa-wb;
@@ -1844,7 +1933,7 @@ function openEditModal(id) {
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','ros','pe','height','weight','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-priority').checked = false;
@@ -1893,9 +1982,18 @@ async function savePatient() {
     // Admit form hides Diagnosis/Assessment & Signs and Symptoms — day 1 defaults to the admitting Dx/CC
     data.dx = data.admDx;
     data.ss = data.cc;
+    // Height/Weight, like History & PE, are captured once at admission
+    data.height = document.getElementById('f-height').value.trim();
+    data.weight = document.getElementById('f-weight').value.trim();
+    // Snapshot the admitting orders so the original Doctor's Order can be reviewed/printed later,
+    // even after diet/ivf/meds/etc change during daily rounds
+    ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([live,snap]) => { data[snap] = data[live]; });
   } else {
     const old = patients[existingId] || {};
     ['admDx','cc','hpi','pmh','psh','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
+    if (old.height) data.height = old.height;
+    if (old.weight) data.weight = old.weight;
+    ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([,snap]) => { if (old[snap]) data[snap] = old[snap]; });
   }
   await db.ref('patients/'+id).set(data);
   closeModal();
@@ -1904,7 +2002,7 @@ async function savePatient() {
 
 function promptDischarge(id, name) {
   dischargeId = id;
-  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to Recently Discharged and can be re-admitted there for 48 hours.`;
+  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to the Archive and can be re-admitted from there at any time.`;
   document.getElementById('discharge-modal').classList.add('open');
 }
 function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
@@ -1915,7 +2013,7 @@ async function confirmDischarge() {
   const id = dischargeId; closeDischargeModal();
   const p = patients[id];
   if (p) {
-    // move to the Recently Discharged holding area (auto-deletes after 48h)
+    // move to the Archive (kept indefinitely; admin can permanently delete from there)
     await db.ref('discharged/'+id).set({ ...p, dischargedAt: Date.now() });
   }
   await db.ref('patients/'+id).remove();
@@ -2248,7 +2346,10 @@ function printMedCert() {
 function openReferPrompt(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('refer-id').value = id;
-  document.getElementById('refer-vitals').value = '';
+  ['bp','temp','hr','rr','o2'].forEach(f => { document.getElementById('refer-'+f).value = ''; });
+  // copy height/weight from the admission record if it was captured there
+  document.getElementById('refer-height').value = p.height || '';
+  document.getElementById('refer-weight').value = p.weight || '';
   document.getElementById('refer-pe').value = '';
   document.getElementById('refer-to').value = '';
   document.getElementById('refer-reason').value = '';
@@ -2259,7 +2360,22 @@ function closeReferPrompt() { document.getElementById('refer-modal').classList.r
 function buildReferralPreview() {
   const id = document.getElementById('refer-id').value;
   const p = patients[id]; if (!p) { closeReferPrompt(); return; }
-  const vitals = document.getElementById('refer-vitals').value.trim();
+  const bp = document.getElementById('refer-bp').value.trim();
+  const temp = document.getElementById('refer-temp').value.trim();
+  const hr = document.getElementById('refer-hr').value.trim();
+  const rr = document.getElementById('refer-rr').value.trim();
+  const o2 = document.getElementById('refer-o2').value.trim();
+  const height = document.getElementById('refer-height').value.trim();
+  const weight = document.getElementById('refer-weight').value.trim();
+  const vitals = [
+    bp ? 'BP: ' + bp : '',
+    temp ? 'Temp: ' + temp + ' °C' : '',
+    hr ? 'HR: ' + hr + ' bpm' : '',
+    rr ? 'RR: ' + rr + ' cpm' : '',
+    o2 ? 'O2 Sat: ' + o2 : '',
+    height ? 'Height: ' + height + ' cm' : '',
+    weight ? 'Weight: ' + weight + ' kg' : '',
+  ].filter(Boolean).join('\n');
   const latestPE = document.getElementById('refer-pe').value.trim();
   const referTo = document.getElementById('refer-to').value.trim();
   const reason = document.getElementById('refer-reason').value.trim();
