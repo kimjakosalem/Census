@@ -374,6 +374,7 @@
             <div class="tab" data-w="OBS" onclick="setRoundsFilter('OBS',this)">OBS</div>
             <div class="tab" data-w="OB" onclick="setRoundsFilter('OB',this)">OB Ward</div>
           </div>
+          <button class="btn btn-outline btn-sm" id="uncharted-toggle" onclick="toggleUnchartedOnly()" title="Show only patients still pending, not yet marked Charted">🆕<span class="btn-label-full"> Uncharted Only</span></button>
         </div>
         <button class="btn btn-outline btn-sm" onclick="startNewRound()">🔄 Start New Round</button>
       </div>
@@ -1056,7 +1057,7 @@ async function deleteMedAbbrev(key) {
   showToast('Abbreviation removed');
 }
 
-let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null, priorityOnly = false;
+let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null, priorityOnly = false, unchartedOnly = false;
 let discharged = {}, showingDischarged = false, showingRounds = false, archiveLoaded = false;
 let archiveSearchActive = false, archiveSearchResults = null, archiveSearchTotal = 0;
 
@@ -1316,11 +1317,12 @@ function renderRounds() {
 
   const filtered = all.filter(p => {
     const mw = roundsFilter==='all' || p.ward===roundsFilter;
+    const mu = !unchartedOnly || p.round?.status === 'pending';
     const pnd = p.round?.pending || {};
     const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan,
                             pnd.ss,pnd.dx,pnd.labsOrdered,pnd.labs,pnd.orders,pnd.plan,pnd.remarks]
       .some(f=>(f||'').toLowerCase().includes(search));
-    return mw && ms;
+    return mw && mu && ms;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
     if (wa!==wb) return wa-wb;
@@ -1858,6 +1860,12 @@ function setRoundsFilter(f, el) {
   if (f === roundsFilter && f !== 'all') f = 'all';
   roundsFilter = f;
   activateTab(el.closest('.filter-tabs'), f);
+  renderRounds();
+}
+function toggleUnchartedOnly() {
+  unchartedOnly = !unchartedOnly;
+  document.getElementById('uncharted-toggle').classList.toggle('btn-primary', unchartedOnly);
+  document.getElementById('uncharted-toggle').classList.toggle('btn-outline', !unchartedOnly);
   renderRounds();
 }
 
