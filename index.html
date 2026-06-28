@@ -1553,12 +1553,25 @@ function buildDoctorsOrderPageHTML(d) {
   </div>`;
 }
 
+// Printed via a hidden same-page iframe rather than window.open(): a separate print window/tab
+// can grab focus and sit there (or get popup-blocked) without the user noticing, leaving the
+// Admit modal looking "stuck" — printing in-page avoids that entirely.
 function openPrintWindow(bodyHtml, title) {
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title>
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(iframe);
+  const cleanup = () => iframe.remove();
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title>
   <style>${PRINT_STYLE}</style></head><body>${bodyHtml}</body></html>`);
-  w.document.close(); w.focus();
-  setTimeout(() => w.print(), 600);
+  doc.close();
+  iframe.contentWindow.onafterprint = cleanup;
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(cleanup, 1000); // fallback for browsers that don't fire onafterprint
+  }, 300);
 }
 
 // History modal — first page only (no Doctor's Order), reading whatever is currently in the
