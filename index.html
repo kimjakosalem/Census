@@ -344,6 +344,7 @@
           <input type="text" id="discharged-search" placeholder="Search discharged name, bed, diagnosis..." oninput="onSearchInput('discharged-search',renderDischarged)">
           <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('discharged-search',renderDischarged)">×</button>
         </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="searchFullArchive()" title="Search every archived patient ever discharged, not just the most recent 300">🔎<span class="btn-label-full"> Search Full Archive</span></button>
         <div style="font-size:12px;color:var(--text3)" id="discharged-count"></div>
       </div>
       <div id="discharged-container"></div>
@@ -1057,6 +1058,7 @@ async function deleteMedAbbrev(key) {
 
 let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null, priorityOnly = false;
 let discharged = {}, showingDischarged = false, showingRounds = false, archiveLoaded = false;
+let archiveSearchActive = false, archiveSearchResults = null, archiveSearchTotal = 0;
 
 /* ===== FIREBASE — HARDCODED CONFIG ===== */
 const firebaseConfig = {
@@ -1168,6 +1170,31 @@ function unloadArchive() {
   db.ref('discharged').off();
   archiveLoaded = false;
   discharged = {};
+  archiveSearchActive = false;
+  archiveSearchResults = null;
+}
+
+// One-time full fetch across the whole archive (not just the most recent 300) — for the rare case of
+// digging up a patient discharged months/years ago. Not a live listener, so it doesn't add ongoing
+// memory cost; the full dataset is dropped as soon as the matches are extracted.
+async function searchFullArchive() {
+  const search = (document.getElementById('discharged-search')?.value || '').trim().toLowerCase();
+  if (!search) { showToast('Type a name to search the full archive'); return; }
+  document.getElementById('discharged-container').innerHTML = '<div class="loading"><div class="spinner"></div> Searching full archive...</div>';
+  const snap = await db.ref('discharged').once('value');
+  const all = snap.val() || {};
+  archiveSearchTotal = Object.keys(all).length;
+  archiveSearchResults = Object.entries(all).map(([id, p]) => ({ ...p, id }))
+    .filter(p => [p.name, p.room, p.dx, p.ss, p.labsOrdered, p.labs, p.meds, p.remarks, p.plan, p.ward]
+      .some(f => (f || '').toLowerCase().includes(search)))
+    .sort((a, b) => (b.dischargedAt || 0) - (a.dischargedAt || 0));
+  archiveSearchActive = true;
+  renderDischarged();
+}
+function exitArchiveSearch() {
+  archiveSearchActive = false;
+  archiveSearchResults = null;
+  renderDischarged();
 }
 
 function setView(view) {   // view = 'census' | 'discharged' | 'rounds'
@@ -1199,25 +1226,39 @@ function renderDischarged() {
   const container = document.getElementById('discharged-container');
   if (!container) return;
   const search = (document.getElementById('discharged-search')?.value || '').toLowerCase();
-  const all = Object.entries(discharged).map(([id, p]) => ({ ...p, id }))
-    .filter(p => !search || [p.name, p.room, p.dx, p.ss, p.labsOrdered, p.labs, p.meds, p.remarks, p.plan, p.ward]
-      .some(f => (f || '').toLowerCase().includes(search)))
-    .sort((a, b) => (b.dischargedAt || 0) - (a.dischargedAt || 0));  // most recently discharged first
+  if (archiveSearchActive && !search) { archiveSearchActive = false; archiveSearchResults = null; }
 
-  const totalCount = Object.keys(discharged).length;
-  document.getElementById('discharged-count').textContent =
-    totalCount ? `${totalCount} archived (most recent 300)${search ? ` · ${all.length} match` : ''}` : '';
+  let all, banner = '';
+  if (archiveSearchActive && archiveSearchResults) {
+    all = archiveSearchResults;
+    document.getElementById('discharged-count').textContent =
+      `${all.length} match${all.length!==1?'es':''} of ${archiveSearchTotal} total archived`;
+    banner = `<div style="background:var(--surface2);color:var(--text2);border-left:3px solid var(--accent);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px">
+      <span>🔎 Full-archive search results</span>
+      <button class="btn btn-outline btn-sm" onclick="exitArchiveSearch()">✕ Back to recent</button>
+    </div>`;
+  } else {
+    all = Object.entries(discharged).map(([id, p]) => ({ ...p, id }))
+      .filter(p => !search || [p.name, p.room, p.dx, p.ss, p.labsOrdered, p.labs, p.meds, p.remarks, p.plan, p.ward]
+        .some(f => (f || '').toLowerCase().includes(search)))
+      .sort((a, b) => (b.dischargedAt || 0) - (a.dischargedAt || 0));  // most recently discharged first
+    const totalCount = Object.keys(discharged).length;
+    document.getElementById('discharged-count').textContent =
+      totalCount ? `${totalCount} archived (most recent 300)${search ? ` · ${all.length} match` : ''}` : '';
+  }
 
   if (!all.length) {
-    container.innerHTML = `<div class="empty-state">
+    container.innerHTML = banner + `<div class="empty-state">
       <div class="empty-icon">🗄️</div>
       <div class="empty-title">${search ? 'No matching archived patients' : 'No archived patients yet'}</div>
-      <div style="font-size:13px;color:var(--text3)">Discharged patients are kept here for reference.</div>
+      <div style="font-size:13px;color:var(--text3)">${search && !archiveSearchActive
+        ? `Not found in the most recent 300 — <a href="#" onclick="searchFullArchive();return false">search the full archive</a> instead.`
+        : 'Discharged patients are kept here for reference.'}</div>
     </div>`;
     return;
   }
 
-  let html = '<div class="patients-grid">';
+  let html = banner + '<div class="patients-grid">';
   all.forEach(p => {
     const c = wardMap[p.ward]?.cls || 'hallway';
     const when = p.dischargedAt ? new Date(p.dischargedAt).toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
