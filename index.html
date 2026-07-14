@@ -161,12 +161,15 @@ if ('serviceWorker' in navigator) {
   .pending-block .field-label{color:#c9a84a}
   .round-progress{font-size:13px;color:var(--text2);font-weight:600}
 
-  /* labs picker — checkbox chips for ordering common labs + pending/result chips */
+  /* labs picker — click-to-toggle chips for ordering common labs + pending/result chips */
   .labs-picker-box{display:flex;flex-wrap:wrap;gap:6px;max-height:170px;overflow-y:auto;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;margin-bottom:10px}
-  .lab-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:16px;border:1px solid var(--border2);background:var(--surface3);font-size:12px;color:var(--text2);cursor:pointer;user-select:none;line-height:1.3}
-  .lab-chip input{margin:0;accent-color:var(--accent)}
+  .lab-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:16px;border:1px solid var(--border2);background:var(--surface3);font:inherit;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;line-height:1.3}
   .lab-chip.checked{background:var(--accent-dim);border-color:var(--accent);color:var(--text)}
   .labs-pending-box{display:flex;flex-wrap:wrap;gap:6px 8px}
+  /* ICD-10 diagnosis picker — click a chip to insert it into the diagnosis field above */
+  .dx-picker-box{display:flex;flex-wrap:wrap;gap:6px;max-height:170px;overflow-y:auto;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;margin-bottom:10px}
+  .dx-chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:16px;border:1px solid var(--border2);background:var(--surface3);font:inherit;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;line-height:1.3;text-align:left}
+  .dx-chip:hover{border-color:var(--accent)}
   .lab-pending-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1px solid #3a2a00;background:#2a2000;font-size:12px;color:#fbbf24}
   .lab-pending-chip.resulting{width:100%;flex-wrap:wrap}
   .lab-pending-chip input[type=text]{padding:5px 8px;font-size:12px;flex:1;min-width:140px}
@@ -470,7 +473,8 @@ if ('serviceWorker' in navigator) {
         </div>
         <div class="form-group full">
           <label>Admitting Physician</label>
-          <input type="text" id="f-physician" placeholder="e.g. Dr. Juan Dela Cruz">
+          <input type="text" id="f-physician" list="physician-datalist" placeholder="Select or type a physician..." autocomplete="off">
+          <datalist id="physician-datalist"></datalist>
         </div>
         <div class="form-group full">
           <label>Priority</label>
@@ -524,6 +528,8 @@ if ('serviceWorker' in navigator) {
           <div class="form-group full">
             <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
             <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
+            <input type="text" id="dxsearch-f-admDx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('f-admDx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('f-admDx');}">
+            <div class="dx-picker-box" id="dxlist-f-admDx"></div>
           </div>
         </div>
         <div id="soap-section">
@@ -534,6 +540,8 @@ if ('serviceWorker' in navigator) {
           <div class="form-group full">
             <div class="label-row"><label>Diagnosis / Assessment</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-dx')">📋 Copy</button></div>
             <textarea id="f-dx" placeholder="Working or final diagnosis..."></textarea>
+            <input type="text" id="dxsearch-f-dx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('f-dx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('f-dx');}">
+            <div class="dx-picker-box" id="dxlist-f-dx"></div>
           </div>
         </div>
         <div class="form-group">
@@ -585,7 +593,7 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- History & PE View Modal -->
-<div class="modal-overlay" id="history-modal">
+<div class="modal-overlay" id="history-modal" style="z-index:1001">
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
       <div class="modal-title" id="history-modal-title">History &amp; PE</div>
@@ -614,6 +622,8 @@ if ('serviceWorker' in navigator) {
         <div class="form-group full">
           <label>Final Diagnosis</label>
           <textarea id="abs-finaldx" placeholder="Final diagnosis for this abstract..."></textarea>
+          <input type="text" id="dxsearch-abs-finaldx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('abs-finaldx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('abs-finaldx');}">
+          <div class="dx-picker-box" id="dxlist-abs-finaldx"></div>
         </div>
         <div class="form-group full">
           <label>Disposition</label>
@@ -658,6 +668,8 @@ if ('serviceWorker' in navigator) {
         <div class="form-group full">
           <label>Diagnosis (printed on certificate)</label>
           <textarea id="mc-dx" placeholder="Diagnosis to state on the certificate..."></textarea>
+          <input type="text" id="dxsearch-mc-dx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('mc-dx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('mc-dx');}">
+          <div class="dx-picker-box" id="dxlist-mc-dx"></div>
         </div>
         <div class="form-group">
           <label>Rest / Confinement Days</label>
@@ -839,6 +851,8 @@ if ('serviceWorker' in navigator) {
         <div class="form-group full">
           <label>Working Diagnosis / Assessment</label>
           <textarea id="r-dx" placeholder="Current working diagnosis — pre-filled with the existing one, edit and save to update it"></textarea>
+          <input type="text" id="dxsearch-r-dx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('r-dx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('r-dx');}">
+          <div class="dx-picker-box" id="dxlist-r-dx"></div>
         </div>
         <div class="form-group full">
           <label>Labs Ordered / Pending</label>
@@ -870,6 +884,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeRoundsModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="openHistoryModal(document.getElementById('rounds-id').value)">📜 History</button>
       <button class="btn btn-primary" onclick="saveRoundsNotes()">Save Notes</button>
     </div>
   </div>
@@ -939,6 +954,15 @@ const DOCTOR_MAP = {
 };
 const HOSPITAL_CHIEF = 'Dr. Jenellie Faith B. Ozoa';
 function doctorName(email) { return DOCTOR_MAP[(email||'').toLowerCase()] || email || ''; }
+// Full staff roster shown in the Admitting Physician dropdown and the toolbar filter — a plain
+// text field previously meant new/other doctors were easy to typo or omit, and the toolbar
+// filter only ever listed names pulled from existing patient records (so a doctor with no
+// currently-admitted patients silently disappeared from it).
+const STAFF_PHYSICIANS = Object.values(DOCTOR_MAP).sort();
+(function populatePhysicianDatalist() {
+  const dl = document.getElementById('physician-datalist');
+  if (dl) dl.innerHTML = STAFF_PHYSICIANS.map(n => `<option value="${esc(n)}">`).join('');
+})();
 let currentDoctorName = '';
 let currentUserEmail = '';
 // Temporarily opened up to all doctors while the dictionary is being built out.
@@ -1168,9 +1192,7 @@ function renderLabsPicker() {
   if (listEl) {
     let html = filtered.map(n => {
       const checked = currentLabsPending.includes(n);
-      return `<label class="lab-chip${checked?' checked':''}" data-lab="${esc(n)}">
-        <input type="checkbox" ${checked?'checked':''} onchange="toggleLabPending(this.closest('[data-lab]').dataset.lab)">${esc(n)}
-      </label>`;
+      return `<button type="button" class="lab-chip${checked?' checked':''}" data-lab="${esc(n)}" onclick="toggleLabPending(this.dataset.lab)">${checked?'✓ ':''}${esc(n)}</button>`;
     }).join('');
     const exactExists = names.some(n => n.toLowerCase() === search);
     if (search && !exactExists) {
@@ -1250,6 +1272,119 @@ function syncLabsOrderedField() {
   const f = labsField('labsOrdered');
   if (f) f.value = currentLabsPending.join(', ');
 }
+
+/* ===== ICD-10 DIAGNOSIS PICKER — curated, growable list (like commonLabs) attached to every
+   diagnosis field. commonDx/ in Firebase is shared and grows as staff add diagnoses via "+ Add",
+   same pattern as the labs picker. Clicking a chip inserts "CODE — Description" as a new line
+   in the target textarea instead of toggling a pending set, since diagnosis fields are free text. */
+const DEFAULT_COMMON_DX = [
+  'A01.00 — Typhoid fever, unspecified','A09 — Infectious gastroenteritis and colitis, unspecified',
+  'A15.0 — Tuberculosis of lung','A27.9 — Leptospirosis, unspecified','A41.9 — Sepsis, unspecified organism',
+  'A90 — Dengue fever [classical dengue]','A91 — Dengue hemorrhagic fever','B54 — Unspecified malaria',
+  'D64.9 — Anemia, unspecified','D69.6 — Thrombocytopenia, unspecified',
+  'E03.9 — Hypothyroidism, unspecified','E05.90 — Thyrotoxicosis, unspecified, without thyrotoxic crisis',
+  'E10.9 — Type 1 diabetes mellitus without complications','E11.9 — Type 2 diabetes mellitus without complications',
+  'E11.65 — Type 2 diabetes mellitus with hyperglycemia','E86.0 — Dehydration',
+  'F10.129 — Alcohol abuse with intoxication, unspecified','F20.9 — Schizophrenia, unspecified',
+  'F32.9 — Major depressive disorder, single episode, unspecified','F41.9 — Anxiety disorder, unspecified',
+  'G40.909 — Epilepsy, unspecified, not intractable, without status epilepticus',
+  'G43.909 — Migraine, unspecified, not intractable, without status migrainosus',
+  'H10.9 — Unspecified conjunctivitis','H66.90 — Otitis media, unspecified, unspecified ear',
+  'I10 — Essential (primary) hypertension','I21.9 — Acute myocardial infarction, unspecified',
+  'I48.91 — Unspecified atrial fibrillation','I50.9 — Heart failure, unspecified',
+  'I63.9 — Cerebral infarction, unspecified','I64 — Stroke, not specified as hemorrhage or infarction',
+  'J00 — Acute nasopharyngitis [common cold]','J02.9 — Acute pharyngitis, unspecified',
+  'J03.90 — Acute tonsillitis, unspecified','J06.9 — Acute upper respiratory infection, unspecified',
+  'J11.1 — Influenza with other respiratory manifestations, virus not identified',
+  'J18.0 — Bronchopneumonia, unspecified organism','J18.9 — Pneumonia, unspecified organism',
+  'J20.9 — Acute bronchitis, unspecified','J44.1 — COPD with acute exacerbation',
+  'J45.901 — Unspecified asthma with (acute) exacerbation','J90 — Pleural effusion, not elsewhere classified',
+  'K27.9 — Peptic ulcer, unspecified as acute or chronic, without hemorrhage or perforation',
+  'K29.70 — Gastritis, unspecified, without bleeding','K35.80 — Unspecified acute appendicitis',
+  'K56.60 — Unspecified intestinal obstruction','K74.60 — Unspecified cirrhosis of liver',
+  'K80.20 — Calculus of gallbladder without cholecystitis, without obstruction',
+  'K81.9 — Cholecystitis, unspecified','K85.90 — Acute pancreatitis without necrosis or infection, unspecified',
+  'K92.2 — Gastrointestinal hemorrhage, unspecified',
+  'L02.91 — Cutaneous abscess, unspecified','L03.90 — Cellulitis, unspecified','L30.9 — Dermatitis, unspecified',
+  'M10.9 — Gout, unspecified','M19.90 — Unspecified osteoarthritis, unspecified site',
+  'M54.50 — Low back pain, unspecified',
+  'N17.9 — Acute kidney failure, unspecified','N18.9 — Chronic kidney disease, unspecified',
+  'N18.6 — End stage renal disease','N20.0 — Calculus of kidney',
+  'N39.0 — Urinary tract infection, site not specified',
+  'N40.0 — Benign prostatic hyperplasia without lower urinary tract symptoms',
+  'N73.9 — Female pelvic inflammatory disease, unspecified','N83.20 — Unspecified ovarian cysts',
+  'O00.9 — Ectopic pregnancy, unspecified','O03.9 — Complete or unspecified spontaneous abortion, without complication',
+  'O14.90 — Unspecified pre-eclampsia, unspecified trimester','O24.4 — Gestational diabetes mellitus',
+  'O60.10 — Preterm labor without delivery, unspecified trimester',
+  'O72.1 — Other immediate postpartum hemorrhage',
+  'P07.30 — Preterm newborn, unspecified weeks of gestation','P36.9 — Bacterial sepsis of newborn, unspecified',
+  'P59.9 — Neonatal jaundice, unspecified',
+  'R10.9 — Unspecified abdominal pain','R11.10 — Vomiting, unspecified','R42 — Dizziness and giddiness',
+  'R50.9 — Fever, unspecified','R51.9 — Headache, unspecified','R55 — Syncope and collapse',
+  'R56.9 — Unspecified convulsions',
+  'T78.2XXA — Anaphylactic shock, unspecified, initial encounter','T78.40XA — Allergy, unspecified, initial encounter',
+  'U07.1 — COVID-19','Z38.00 — Single liveborn infant, delivered vaginally'
+];
+let commonDxList = [];
+let commonDxSeeded = false;
+const DX_PICKER_FIELDS = ['f-admDx','f-dx','r-dx','abs-finaldx','mc-dx'];
+function watchCommonDx() {
+  db.ref('commonDx').on('value', snap => {
+    const val = snap.val();
+    if (val === null && !commonDxSeeded) {
+      // first-ever run for this hospital — seed the starter list once; the .set below
+      // re-triggers this same listener with the seeded data
+      commonDxSeeded = true;
+      const seed = {};
+      DEFAULT_COMMON_DX.forEach(name => { seed[db.ref('commonDx').push().key] = name; });
+      db.ref('commonDx').set(seed);
+      return;
+    }
+    commonDxSeeded = true;
+    commonDxList = Object.values(val || {}).filter(Boolean);
+    DX_PICKER_FIELDS.forEach(renderDxPicker);
+  });
+}
+function renderDxPicker(fieldId) {
+  const searchEl = document.getElementById('dxsearch-' + fieldId);
+  const listEl = document.getElementById('dxlist-' + fieldId);
+  if (!searchEl || !listEl) return;
+  const search = (searchEl.value || '').toLowerCase().trim();
+  const names = [...commonDxList].sort((a,b) => a.localeCompare(b));
+  const filtered = search ? names.filter(n => n.toLowerCase().includes(search)) : names;
+  let html = filtered.map(n =>
+    `<button type="button" class="dx-chip" data-dx="${esc(n)}" onclick="insertDx('${fieldId}', this.dataset.dx)">${esc(n)}</button>`
+  ).join('');
+  const exactExists = names.some(n => n.toLowerCase() === search);
+  if (search && !exactExists) {
+    html += `<button type="button" class="btn btn-outline btn-sm" onclick="addCustomDx('${fieldId}')">➕ Add "${esc(searchEl.value.trim())}"</button>`;
+  }
+  listEl.innerHTML = html || '<div style="font-size:12px;color:var(--text3);font-style:italic">No matches — type to add a new one.</div>';
+}
+function resetDxPicker(fieldId) {
+  const s = document.getElementById('dxsearch-' + fieldId);
+  if (s) s.value = '';
+  renderDxPicker(fieldId);
+}
+function insertDx(fieldId, value) {
+  const field = document.getElementById(fieldId);
+  if (!field || !value) return;
+  const current = field.value.trim();
+  if (current.split('\n').some(l => l.trim() === value.trim())) { showToast('Already added'); return; }
+  field.value = current ? current + '\n' + value : value;
+  const searchEl = document.getElementById('dxsearch-' + fieldId);
+  if (searchEl) { searchEl.value = ''; renderDxPicker(fieldId); }
+  field.focus();
+}
+async function addCustomDx(fieldId) {
+  const searchEl = document.getElementById('dxsearch-' + fieldId);
+  const name = (searchEl?.value || '').trim();
+  if (!name) return;
+  const exists = commonDxList.some(n => n.toLowerCase() === name.toLowerCase());
+  if (!exists) { commonDxList.push(name); await db.ref('commonDx').push(name); }
+  insertDx(fieldId, name);
+}
+
 let discharged = {}, showingDischarged = false, showingRounds = false, archiveLoaded = false;
 let archiveSearchActive = false, archiveSearchResults = null, archiveSearchTotal = 0;
 
@@ -1345,6 +1480,7 @@ function startCensus() {
     if (document.getElementById('medabbrev-modal').classList.contains('open')) renderMedAbbrevList();
   });
   watchCommonLabs();
+  watchCommonDx();
 }
 
 /* ===== ARCHIVE (formerly Recently Discharged) =====
@@ -1565,6 +1701,7 @@ function renderRounds() {
         ${chart}
         ${pendBlock}
         <div class="card-actions">
+          <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openRoundsModal('${p.id}')">➕ ${st==='pending'?'Edit':'Add'} Notes</button>
           ${st==='pending'?`<button class="btn btn-green btn-sm" onclick="markCharted('${p.id}')">✓ Charted</button>`:''}
         </div>
@@ -1595,6 +1732,7 @@ function openRoundsModal(id) {
   updateMedsPreview('r-plan','r-plan-preview');
   updateMedsPreview('r-remarks','r-remarks-preview');
   initLabsPicker('r', pend.labsPending || p.labsPending || parseLabsOrderedFallback(pend.labsOrdered || p.labsOrdered));
+  resetDxPicker('r-dx');
 }
 function closeRoundsModal() { document.getElementById('rounds-modal').classList.remove('open'); }
 
@@ -1606,7 +1744,7 @@ function copySoap(id) {
   if (pend.labs)   lines.push('O: ' + pend.labs);
   if (pend.dx)     lines.push('A: ' + pend.dx);
   const planParts = [pend.orders, pend.plan].filter(Boolean).join('\n   ');
-  if (planParts)   lines.push('P: ' + planParts);
+  lines.push('P: ' + (planParts || 'Continue present management'));
   if (pend.remarks) lines.push('\nNotes: ' + pend.remarks);
   const text = lines.join('\n');
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2113,7 +2251,9 @@ function setDoctorFilter(v) {
 function populateDoctorFilter(all) {
   const sel = document.getElementById('doctor-filter');
   if (!sel) return;
-  const names = Array.from(new Set(all.map(p => (p.physician||'').trim()).filter(Boolean))).sort();
+  // Always includes the full staff roster (not just physicians with a currently-admitted
+  // patient), plus any other/legacy names already used on patient records.
+  const names = Array.from(new Set([...STAFF_PHYSICIANS, ...all.map(p => (p.physician||'').trim())].filter(Boolean))).sort();
   const prevValue = doctorFilter;
   sel.innerHTML = '<option value="all">👤 All Physicians</option>' +
     names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
@@ -2243,6 +2383,8 @@ function openAdmitModal() {
   updateMedsPreview('f-plan','f-plan-preview');
   updateMedsPreview('f-remarks','f-remarks-preview');
   initLabsPicker('f', []);
+  resetDxPicker('f-admDx');
+  resetDxPicker('f-dx');
 }
 
 function openEditModal(id) {
@@ -2264,6 +2406,8 @@ function openEditModal(id) {
   updateMedsPreview('f-plan','f-plan-preview');
   updateMedsPreview('f-remarks','f-remarks-preview');
   initLabsPicker('f', p.labsPending || parseLabsOrderedFallback(p.labsOrdered));
+  resetDxPicker('f-admDx');
+  resetDxPicker('f-dx');
 }
 
 function clearForm() {
@@ -2495,6 +2639,7 @@ function openAbstractPrompt(id) {
   document.getElementById('abs-homemeds').value = p.homeMeds || '';
   document.getElementById('abs-instructions').value = p.specialInstructions || '';
   document.getElementById('abstract-modal').classList.add('open');
+  resetDxPicker('abs-finaldx');
 }
 function closeAbstractPrompt() { document.getElementById('abstract-modal').classList.remove('open'); }
 
@@ -2607,6 +2752,7 @@ function openMedCertPrompt(id, fromDischarge) {
   document.getElementById('mc-purpose-other').value = '';
   document.getElementById('mc-purpose-other').style.display = 'none';
   document.getElementById('medcert-modal').classList.add('open');
+  resetDxPicker('mc-dx');
 }
 function closeMedCertPrompt() { document.getElementById('medcert-modal').classList.remove('open'); }
 
