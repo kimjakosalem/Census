@@ -257,6 +257,9 @@ if ('serviceWorker' in navigator) {
     .modal-footer{padding:12px 16px}
     .toolbar{gap:8px}
     .search-box{max-width:none}
+    /* font-size below 16px makes mobile browsers auto-zoom a focused field, which is what causes
+       the caret to visually render on the wrong line while typing (esp. in Rounds Mode textareas) */
+    input,select,textarea{font-size:16px}
   }
   @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
 </style>
@@ -2479,7 +2482,27 @@ async function savePatient() {
   }
   await db.ref('patients/'+id).set(data);
   closeModal();
+  // A newly admitted patient can silently fail to appear if a ward tab, search text, or a
+  // Priority/Today/Doctor filter from earlier browsing is still active — reset the view so the
+  // freshly saved patient is always visible without needing a page refresh.
+  if (!existingId) resetCensusFilters();
   showToast(existingId ? '✓ Patient updated' : '✓ Patient admitted');
+}
+
+function resetCensusFilters() {
+  currentFilter = 'all';
+  const tabs = document.querySelector('#census-view .filter-tabs');
+  if (tabs) activateTab(tabs, 'all');
+  priorityOnly = false;
+  document.getElementById('priority-toggle').classList.remove('btn-primary');
+  document.getElementById('priority-toggle').classList.add('btn-outline');
+  todayOnly = false;
+  document.getElementById('today-toggle').classList.remove('btn-primary');
+  document.getElementById('today-toggle').classList.add('btn-outline');
+  doctorFilter = 'all';
+  const docSel = document.getElementById('doctor-filter');
+  if (docSel) docSel.value = 'all';
+  clearSearch('search-input', renderPatients);
 }
 
 function promptDischarge(id, name) {
@@ -2705,7 +2728,8 @@ async function printAbstract() {
         <div class="abs-sig-name">${esc(HOSPITAL_CHIEF)}</div>
         <div class="abs-sig-title">Hospital Chief</div>
       </div>
-    </div>`;
+    </div>
+    <div class="abs-seal-note">Not valid without official seal.</div>`;
 
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Abstract — ${esc(p.name||'')}</title>
@@ -2735,6 +2759,7 @@ async function printAbstract() {
     .abs-sig-line{border-top:1pt solid #1a1a1a;margin-bottom:4pt}
     .abs-sig-name{font-size:9.3pt;font-weight:bold}
     .abs-sig-title{font-size:7.8pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
+    .abs-seal-note{margin-top:14pt;font-size:7.5pt;color:#666;text-align:center;font-style:italic}
     @media print{@page{margin:9mm 11mm;size:letter portrait}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
@@ -2799,7 +2824,8 @@ function printMedCert() {
         <div class="mc-cred-line">License No.: _______________</div>
         <div class="mc-cred-line">PTR No.: _______________</div>
       </div>
-    </div>`;
+    </div>
+    <div class="abs-seal-note">Not valid without official seal.</div>`;
 
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Certificate — ${esc(p.name||'')}</title>
@@ -2820,7 +2846,10 @@ function printMedCert() {
     .abs-sig-name{font-size:9pt;font-weight:bold}
     .abs-sig-title{font-size:7.5pt;color:#555;text-transform:uppercase;letter-spacing:.3pt;margin-top:1pt}
     .mc-cred-line{font-size:7.5pt;color:#444;margin-top:4pt}
-    @media print{@page{margin:10mm 12mm;size:A5 landscape}}
+    .abs-seal-note{margin-top:14pt;font-size:7.5pt;color:#666;text-align:center;font-style:italic}
+    /* Half of a long/legal (8.5x13in) bond sheet, cut crosswise (landscape) — matches the
+       physical half-sheets the hospital actually prints certificates on, not ISO A5 */
+    @media print{@page{margin:10mm 12mm;size:215.9mm 165.1mm}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 600);
