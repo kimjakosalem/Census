@@ -2901,19 +2901,39 @@ function printMedCert() {
 }
 
 /* ===== REFER — COPYABLE CASE SUMMARY ===== */
+// Drafts persist per-patient in this browser (localStorage) so an accidental close
+// doesn't lose typed vitals/PE/reason; cleared once the summary is actually copied.
+const REFER_DRAFT_FIELDS = ['bp','temp','hr','rr','o2','pe','to','reason'];
+function referDraftKey(id) { return 'referDraft_' + id; }
+function saveReferDraft(id) {
+  if (!id) return;
+  const draft = {};
+  REFER_DRAFT_FIELDS.forEach(f => { draft[f] = document.getElementById('refer-'+f).value; });
+  localStorage.setItem(referDraftKey(id), JSON.stringify(draft));
+}
+function loadReferDraft(id) {
+  try { const raw = localStorage.getItem(referDraftKey(id)); return raw ? JSON.parse(raw) : null; }
+  catch { return null; }
+}
+function clearReferDraft(id) { localStorage.removeItem(referDraftKey(id)); }
+
 function openReferPrompt(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('refer-id').value = id;
-  ['bp','temp','hr','rr','o2'].forEach(f => { document.getElementById('refer-'+f).value = ''; });
+  const draft = loadReferDraft(id) || {};
+  ['bp','temp','hr','rr','o2'].forEach(f => { document.getElementById('refer-'+f).value = draft[f] || ''; });
   // copy height/weight from the admission record if it was captured there
   document.getElementById('refer-height').value = p.height || '';
   document.getElementById('refer-weight').value = p.weight || '';
-  document.getElementById('refer-pe').value = '';
-  document.getElementById('refer-to').value = '';
-  document.getElementById('refer-reason').value = '';
+  document.getElementById('refer-pe').value = draft.pe || '';
+  document.getElementById('refer-to').value = draft.to || '';
+  document.getElementById('refer-reason').value = draft.reason || '';
   document.getElementById('refer-modal').classList.add('open');
 }
-function closeReferPrompt() { document.getElementById('refer-modal').classList.remove('open'); }
+function closeReferPrompt() {
+  saveReferDraft(document.getElementById('refer-id').value);
+  document.getElementById('refer-modal').classList.remove('open');
+}
 
 function buildReferralPreview() {
   const id = document.getElementById('refer-id').value;
@@ -2989,6 +3009,7 @@ function closeReferPreview() { document.getElementById('refer-preview-modal').cl
 function copyReferralPreview() {
   const text = document.getElementById('refer-preview-text').value;
   const msg = '📋 Case summary copied — paste into the e-referral site';
+  clearReferDraft(document.getElementById('refer-id').value);
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
   } else { fallbackCopy(text, msg); }
