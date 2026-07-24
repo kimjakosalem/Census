@@ -445,7 +445,13 @@ if ('serviceWorker' in navigator) {
         </div>
         <div class="form-group">
           <label>Age</label>
-          <input type="number" id="f-age" placeholder="e.g. 34" min="0" max="150">
+          <div style="display:flex;gap:6px">
+            <input type="number" id="f-age" placeholder="e.g. 34" min="0" max="150" style="flex:1">
+            <select id="f-age-unit" style="flex:0 0 auto">
+              <option value="yrs">yrs</option>
+              <option value="mo">mos</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
           <label>Sex</label>
@@ -1644,7 +1650,7 @@ function renderDischarged() {
       <div class="card-top">
         <div style="min-width:0">
           <div class="patient-name">${esc(p.name||'Unknown')}</div>
-          <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${wardMap[p.ward]?.label||p.ward||''}</div>
+          <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${wardMap[p.ward]?.label||p.ward||''}</div>
         </div>
         <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
       </div>
@@ -1741,7 +1747,7 @@ function renderRounds() {
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
-            <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
+            <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
             ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span> ':''}${pill}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
@@ -1938,7 +1944,7 @@ function printDemoBlockHTML(d) {
   return `<div class="abs-demo">
     <div class="abs-demo-name">${esc(d.name||'—')}</div>
     <div class="abs-demo-grid">
-      <div><span class="abs-demo-label">Age/Sex</span>${d.age||'—'} y/o ${esc(d.sex||'—')}</div>
+      <div><span class="abs-demo-label">Age/Sex</span>${d.age||'—'} ${ageUnitLabel(d)} ${esc(d.sex||'—')}</div>
       <div><span class="abs-demo-label">Ward</span>${esc(wardMap[d.ward]?.label||d.ward||'—')}</div>
       <div><span class="abs-demo-label">Bed</span>${esc(d.room||'—')}</div>
       <div><span class="abs-demo-label">Date Admitted</span>${fmtDate(d.date)}</div>
@@ -2021,7 +2027,7 @@ function openPrintWindow(bodyHtml, title) {
 function printHistoryFromModal() {
   const id = document.getElementById('history-id').value;
   const p = patients[id]; if (!p) return;
-  const d = { name: p.name, age: p.age, sex: p.sex, ward: p.ward, room: p.room, date: p.date, physician: p.physician };
+  const d = { name: p.name, age: p.age, ageUnit: p.ageUnit, sex: p.sex, ward: p.ward, room: p.room, date: p.date, physician: p.physician };
   HNP_PRINT_FIELDS.forEach(([k]) => { d[k] = document.getElementById('hist-'+k).value.trim(); });
   let html = buildHistoryPEPageHTML(d);
   if (ADMIT_ORDER_FIELDS.some(([k]) => p[k])) {
@@ -2036,6 +2042,7 @@ function printAdmissionPacket() {
   const d = {
     name: document.getElementById('f-name').value.trim(),
     age: document.getElementById('f-age').value,
+    ageUnit: document.getElementById('f-age-unit').value,
     sex: document.getElementById('f-sex').value,
     ward: document.getElementById('f-ward').value,
     room: document.getElementById('f-room').value.trim(),
@@ -2208,6 +2215,14 @@ function formatName(s) { return titleCase(String(s||'').trim().replace(/,(?!\s)/
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function tr(s,n) { return s&&s.length>n?s.substring(0,n)+'…':s; }
 function fmtDate(d) { if(!d)return'—'; try{return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}catch{return d}; }
+// Age unit label — patients under 1 y/o are recorded in months (p.ageUnit === 'mo').
+// style: 'slash' (default, "y/o"/"mo/o"), 'words' ("years old"/"months old"), 'compact' (""/"mo").
+function ageUnitLabel(p, style) {
+  const isMo = p && p.ageUnit === 'mo';
+  if (style === 'words') return isMo ? (p.age == 1 ? 'month old' : 'months old') : (p.age == 1 ? 'year old' : 'years old');
+  if (style === 'compact') return isMo ? 'mo' : '';
+  return isMo ? 'mo/o' : 'y/o';
+}
 function labsCellHTML(p) {
   const parts = [];
   if (p.labsOrdered) parts.push((p.labs?'<strong>Ord:</strong> ':'') + esc(p.labsOrdered));
@@ -2374,7 +2389,7 @@ function renderPatients() {
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
-            <div class="patient-meta">${p.age?p.age+' y/o ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
+            <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
             ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}${noHistory?'<span class="no-history-pill">⚠ NO HISTORY</span>':''}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
@@ -2442,6 +2457,7 @@ function openEditModal(id) {
   ['name','age','sex','date','ward','room','physician','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
+  document.getElementById('f-age-unit').value = p.ageUnit || 'yrs';
   document.getElementById('f-priority').checked = !!p.priority;
   document.getElementById('history-pe-section').style.display = 'none';
   document.getElementById('soap-section').style.display = '';
@@ -2462,6 +2478,7 @@ function clearForm() {
   ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
+  document.getElementById('f-age-unit').value = 'yrs';
   document.getElementById('f-priority').checked = false;
 }
 
@@ -2485,6 +2502,7 @@ async function savePatient() {
   const data = {
     name, ward, date,
     age: document.getElementById('f-age').value,
+    ageUnit: document.getElementById('f-age-unit').value,
     sex: document.getElementById('f-sex').value,
     room: document.getElementById('f-room').value.trim(),
     physician: document.getElementById('f-physician').value.trim(),
@@ -2605,7 +2623,7 @@ function buildPreviewHTML(hospital) {
       html += `<tr>
         <td>${p.priority?'<span style="color:#f87171;font-weight:800">⚡ </span>':''}<strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}${p.priority?' · PRIORITY':''}</span></td>
         <td>${esc(p.room||'—')}</td>
-        <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
+        <td>${p.age||'—'}${ageUnitLabel(p,'compact')}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong style="color:var(--text)">'+esc(p.dx)+'</strong>':''}${p.dx&&p.ss?'<br>':''}${p.ss?'<span style="font-size:11px">'+esc(p.ss)+'</span>':''}</td>
         <td style="font-size:11px">${labsCellHTML(p)}</td>
@@ -2655,7 +2673,7 @@ function doPrint() {
       body += `<tr>
         <td>${p.priority?'★ ':''}<strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})${p.priority?' — PRIORITY':''}</td>
         <td>${esc(p.room||'—')}</td>
-        <td>${p.age||'—'}/${p.sex?p.sex[0]:'—'}</td>
+        <td>${p.age||'—'}${ageUnitLabel(p,'compact')}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong>'+esc(p.dx)+'</strong>':''}${p.ss?'<br>'+esc(p.ss):''}</td>
         <td>${labsCellHTML(p)}</td>
@@ -2745,7 +2763,7 @@ async function printAbstract() {
     <div class="abs-demo">
       <div class="abs-demo-name">${esc(p.name||'—')}</div>
       <div class="abs-demo-grid">
-        <div><span class="abs-demo-label">Age/Sex</span>${p.age||'—'} y/o ${esc(p.sex||'—')}</div>
+        <div><span class="abs-demo-label">Age/Sex</span>${p.age||'—'} ${ageUnitLabel(p)} ${esc(p.sex||'—')}</div>
         <div><span class="abs-demo-label">Ward</span>${esc(wardMap[p.ward]?.label||p.ward||'—')}</div>
         <div><span class="abs-demo-label">Bed</span>${esc(p.room||'—')}</div>
         <div><span class="abs-demo-label">Date Admitted</span>${fmtDate(p.date)}</div>
@@ -2855,7 +2873,7 @@ function printMedCert() {
     </div>
     <div class="mc-body">
       <p>TO WHOM IT MAY CONCERN:</p>
-      <p>This is to certify that <strong>${esc(p.name||'—')}</strong>, ${p.age||'—'} years old, ${esc(p.sex||'—')}, was examined/treated/confined at this hospital${p.date?` since ${fmtDate(p.date)}`:''} with the following diagnosis:</p>
+      <p>This is to certify that <strong>${esc(p.name||'—')}</strong>, ${p.age||'—'} ${ageUnitLabel(p,'words')}, ${esc(p.sex||'—')}, was examined/treated/confined at this hospital${p.date?` since ${fmtDate(p.date)}`:''} with the following diagnosis:</p>
       <div class="mc-dx-box">${esc(dx || '—')}</div>
       <p>${restLine}</p>
       <p>${purposeLine}</p>
@@ -2975,7 +2993,7 @@ function buildReferralPreview() {
 
   lines = lines.concat(section('Patient Information', [
     'Patient: ' + (p.name || '—'),
-    'Age/Sex: ' + (p.age || '—') + ' / ' + (p.sex || '—'),
+    'Age/Sex: ' + (p.age || '—') + (p.age ? ' ' + ageUnitLabel(p) : '') + ' / ' + (p.sex || '—'),
     'Ward/Bed: ' + (wardMap[p.ward]?.label || p.ward || '—') + ' / ' + (p.room || '—'),
     'Date Admitted: ' + fmtDate(p.date) + ' (Day ' + days(p.date) + ')',
   ], true));
