@@ -620,6 +620,34 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- Archive Dates Modal -->
+<div class="modal-overlay" id="archdates-modal" style="z-index:1001">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title" id="archdates-title">Adjust Dates</div>
+      <button class="modal-close" onclick="closeArchiveDates()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="archdates-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Date Admitted</label>
+          <input type="date" id="ad-admit">
+        </div>
+        <div class="form-group full">
+          <label>Date Discharged</label>
+          <input type="date" id="ad-discharge">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:12px" id="archdates-los"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeArchiveDates()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveArchiveDates()">Save Dates</button>
+    </div>
+  </div>
+</div>
+
 <!-- Medical Abstract Pre-Print Modal -->
 <div class="modal-overlay" id="abstract-modal">
   <div class="modal" style="max-width:480px">
@@ -641,6 +669,7 @@ if ('serviceWorker' in navigator) {
           <select id="abs-disposition" onchange="document.getElementById('abs-disposition-other').style.display = this.value==='Other' ? '' : 'none'">
             <option value="">Select...</option>
             <option>Discharged Improved</option>
+            <option>Referred to Another Facility</option>
             <option>Discharged Against Medical Advice (HAMA)</option>
             <option>Transferred to Another Facility</option>
             <option>Absconded</option>
@@ -827,17 +856,39 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<!-- Discharge Confirm Modal -->
+<!-- Discharge Modal -->
 <div class="modal-overlay" id="discharge-modal">
-  <div class="confirm-modal">
-    <div class="confirm-icon">🚪</div>
-    <div class="confirm-title">Discharge Patient?</div>
-    <div class="confirm-text" id="discharge-text">This will permanently remove the patient from the census.</div>
-    <div class="confirm-actions" style="margin-bottom:10px">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title" id="discharge-title">🚪 Discharge Patient</div>
+      <button class="modal-close" onclick="closeDischargeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px" id="discharge-text"></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Date of Discharge</label>
+          <input type="date" id="dis-date">
+        </div>
+        <div class="form-group full">
+          <label>Disposition</label>
+          <select id="dis-disposition" onchange="document.getElementById('dis-disposition-other').style.display = this.value==='Other' ? '' : 'none'"></select>
+          <input type="text" id="dis-disposition-other" placeholder="Specify disposition..." style="display:none;margin-top:6px">
+        </div>
+        <div class="form-group full">
+          <div class="label-row"><label>Home Medications</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('dis-homemeds')">📋 Copy</button></div>
+          <textarea id="dis-homemeds" placeholder="Medications to continue at home..." oninput="updateMedsPreview('dis-homemeds','dis-homemeds-preview')"></textarea>
+          <div id="dis-homemeds-preview" class="meds-preview" style="display:none"></div>
+        </div>
+        <div class="form-group full">
+          <label>Special Instructions <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional)</span></label>
+          <textarea id="dis-instructions" placeholder="Follow-up, diet, activity, warning signs to watch for..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
       <button class="btn btn-outline" onclick="dischargeOpenAbstract()">🖨️ Abstract</button>
       <button class="btn btn-outline" onclick="dischargeOpenMedCert()">📄 Med Cert</button>
-    </div>
-    <div class="confirm-actions">
       <button class="btn btn-outline" onclick="closeDischargeModal()">Cancel</button>
       <button class="btn btn-danger" onclick="confirmDischarge()">Confirm Discharge</button>
     </div>
@@ -853,7 +904,17 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="modal-body">
       <input type="hidden" id="rounds-id">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Add today's new findings. They stay as <strong style="color:#fbbf24">pending</strong> until you mark the patient charted — then they merge into the record with a date stamp.</div>
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group">
+          <label>Ward</label>
+          <select id="r-ward"></select>
+        </div>
+        <div class="form-group">
+          <label>Bed / Room No.</label>
+          <input type="text" id="r-room" placeholder="e.g. Bed 3, Room 201">
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Ward and bed save straight to the record. Add today's new findings. They stay as <strong style="color:#fbbf24">pending</strong> until you mark the patient charted — then they merge into the record with a date stamp.</div>
       <div class="form-grid">
         <div class="form-group full">
           <label>New Signs &amp; Symptoms</label>
@@ -1646,6 +1707,8 @@ function renderDischarged() {
   all.forEach(p => {
     const c = wardMap[p.ward]?.cls || 'hallway';
     const when = p.dischargedAt ? new Date(p.dischargedAt).toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const losDays = (p.date && p.dischargedAt) ? days(p.date, p.dischargedAt) : null;
+    const los = losDays === null ? '' : ` · ${losDays} day${losDays===1?'':'s'} stay`;
     html += `<div class="patient-card" style="cursor:default">
       <div class="card-top">
         <div style="min-width:0">
@@ -1655,9 +1718,13 @@ function renderDischarged() {
         <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
       </div>
       ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
+      ${p.disposition?`<div class="card-field"><span class="field-label">Dispo</span><span class="field-value">${esc(p.disposition)}</span></div>`:''}
       ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
-      <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}</span></div>
+      <div class="card-field"><span class="field-label">In</span><span class="field-value">${fmtDate(p.date)}</span></div>
+      <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}${los}</span></div>
       <div class="card-actions">
+        <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
+        <button class="btn btn-outline btn-sm" onclick="openArchiveDates('${p.id}')">🗓️ Dates</button>
         <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
         <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}',true)">📄 Med Cert</button>
         <button class="btn btn-green btn-sm" onclick="restorePatient('${p.id}')">↩️ Re-admit</button>
@@ -1677,6 +1744,46 @@ async function restorePatient(id) {
   await db.ref('patients/' + id).set(data);
   await db.ref('discharged/' + id).remove();
   showToast('↩️ Patient re-admitted');
+}
+
+/* Admission and discharge dates can drift from what actually happened (late entry, a patient
+   sent home the night before). Both are editable straight from the Archive card. */
+function openArchiveDates(id) {
+  const { p } = findPatient(id); if (!p) return;
+  document.getElementById('archdates-id').value = id;
+  document.getElementById('archdates-title').textContent = 'Adjust Dates — ' + (p.name||'');
+  document.getElementById('ad-admit').value = p.date || '';
+  document.getElementById('ad-discharge').value = p.dischargeDate || (p.dischargedAt ? localDateStr(p.dischargedAt) : '');
+  updateArchiveLos();
+  document.getElementById('ad-admit').oninput = updateArchiveLos;
+  document.getElementById('ad-discharge').oninput = updateArchiveLos;
+  document.getElementById('archdates-modal').classList.add('open');
+}
+function updateArchiveLos() {
+  const a = document.getElementById('ad-admit').value, d = document.getElementById('ad-discharge').value;
+  const el = document.getElementById('archdates-los');
+  if (!a || !d) { el.textContent = ''; return; }
+  const n = days(a, new Date(d + 'T12:00:00').getTime());
+  el.textContent = n < 0 ? '⚠️ Discharge date is before the admission date.' : `Length of stay: ${n} day${n===1?'':'s'}.`;
+}
+function closeArchiveDates() { document.getElementById('archdates-modal').classList.remove('open'); }
+async function saveArchiveDates() {
+  const id = document.getElementById('archdates-id').value;
+  const { p, ref } = findPatient(id); if (!ref) return;
+  const admit = document.getElementById('ad-admit').value;
+  const disDate = document.getElementById('ad-discharge').value;
+  if (!admit) { alert('Date Admitted is required.'); return; }
+  if (disDate && new Date(disDate) < new Date(admit)) {
+    if (!confirm('The discharge date is before the admission date. Save anyway?')) return;
+  }
+  const updates = { date: admit };
+  if (disDate) {
+    updates.dischargeDate = disDate;
+    updates.dischargedAt = dateToTs(disDate, p.dischargedAt);
+  }
+  await db.ref(ref).update(updates);
+  closeArchiveDates();
+  showToast('✓ Dates updated');
 }
 
 async function deleteDischarged(id, name) {
@@ -1770,6 +1877,11 @@ function openRoundsModal(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('rounds-id').value = id;
   document.getElementById('rounds-modal-title').textContent = 'Rounds Notes — ' + (p.name||'');
+  // Ward / bed are live record fields, not round notes — they save immediately on Save Notes
+  const wsel = document.getElementById('r-ward');
+  wsel.innerHTML = WARDS.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
+  wsel.value = p.ward || '';
+  document.getElementById('r-room').value = p.room || '';
   const pend = p.round?.pending || {};
   document.getElementById('r-ss').value = pend.ss || '';
   // Diagnosis/Assessment is a running working dx, not an append log — default to the current
@@ -1825,20 +1937,17 @@ const ADMIT_ORDER_FIELDS = [['admDiet','Diet',false],['admIvf','IVF',false],['ad
 const ADMIT_ORDER_SNAPSHOT_PAIRS = [['diet','admDiet'],['ivf','admIvf'],['labsOrdered','admLabsOrdered'],['meds','admMeds'],['plan','admPlan'],['remarks','admRemarks']];
 
 function buildAdmitOrdersSectionHTML(p) {
-  const rows = ADMIT_ORDER_FIELDS.map(([k,label,expand]) => {
-    if (!p[k]) return '';
-    const val = expand ? expandMeds(p[k]) : p[k];
-    return `<div class="order-line" data-copy="${esc(val)}">
-      <div class="order-line-head">
-        <span class="order-line-label">${label}</span>
-        <button type="button" class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" tabindex="-1" onclick="copyOrderLine(this)">📋 Copy</button>
+  const rows = ADMIT_ORDER_FIELDS.map(([k,label,expand]) => `
+    <div class="form-group full" style="margin-bottom:14px">
+      <div class="label-row">
+        <label style="margin:0">${label}</label>
+        <button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('hist-${k}', ${expand ? 'true' : 'false'})">📋 Copy</button>
       </div>
-      <div class="order-line-value">${esc(val)}</div>
-    </div>`;
-  }).join('');
+      <textarea id="hist-${k}">${esc(p[k]||'')}</textarea>
+    </div>`).join('');
   return `<div style="margin-top:8px;padding-top:14px;border-top:1px solid var(--border)">
-    <div style="font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">📋 Admitting Orders <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(recorded at admission, read-only)</span></div>
-    ${rows || '<div style="font-size:13px;color:var(--text3);font-style:italic">Not recorded.</div>'}
+    <div style="font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">📋 Admitting Orders <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(what was ordered on day 1 — editable)</span></div>
+    ${rows}
   </div>`;
 }
 function copyOrderLine(btn) {
@@ -1850,7 +1959,7 @@ function copyOrderLine(btn) {
 }
 
 function openHistoryModal(id) {
-  const p = patients[id]; if (!p) return;
+  const { p } = findPatient(id); if (!p) return;
   document.getElementById('history-modal-title').textContent = 'History & PE — ' + (p.name||'');
   const body = document.getElementById('history-modal-body');
   body.innerHTML = `<input type="hidden" id="history-id" value="${esc(id)}">` + HISTORY_FIELDS.map(([k,label]) => `
@@ -1865,8 +1974,9 @@ function openHistoryModal(id) {
 }
 function closeHistoryModal() { document.getElementById('history-modal').classList.remove('open'); }
 
-function copyHistoryField(fieldId) {
-  const text = document.getElementById(fieldId).value || '';
+function copyHistoryField(fieldId, expand) {
+  const raw = document.getElementById(fieldId).value || '';
+  const text = expand ? expandMeds(raw) : raw;
   const msg = '📋 Copied — paste into iHOMIS';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
@@ -1886,9 +1996,12 @@ function copyAllHistory() {
 
 async function saveHistoryModal() {
   const id = document.getElementById('history-id').value; if (!id) return;
+  const { ref } = findPatient(id); if (!ref) return;
   const updates = {};
   HISTORY_FIELDS.forEach(([k]) => { updates[k] = document.getElementById('hist-'+k).value.trim(); });
-  await db.ref('patients/'+id).update(updates);
+  // the admission-day orders snapshot is editable here too — typos on day 1 shouldn't be permanent
+  ADMIT_ORDER_FIELDS.forEach(([k]) => { updates[k] = document.getElementById('hist-'+k).value.trim(); });
+  await db.ref(ref).update(updates);
   showToast('✓ History & PE updated');
   closeHistoryModal();
 }
@@ -2026,12 +2139,15 @@ function openPrintWindow(bodyHtml, title) {
 // textareas so unsaved edits print too (same source as Copy All).
 function printHistoryFromModal() {
   const id = document.getElementById('history-id').value;
-  const p = patients[id]; if (!p) return;
+  const { p } = findPatient(id); if (!p) return;
   const d = { name: p.name, age: p.age, ageUnit: p.ageUnit, sex: p.sex, ward: p.ward, room: p.room, date: p.date, physician: p.physician };
   HNP_PRINT_FIELDS.forEach(([k]) => { d[k] = document.getElementById('hist-'+k).value.trim(); });
+  // read the admitting orders off the (now editable) form so unsaved corrections still print
+  const ao = {};
+  ADMIT_ORDER_FIELDS.forEach(([k]) => { ao[k] = document.getElementById('hist-'+k)?.value.trim() || ''; });
   let html = buildHistoryPEPageHTML(d);
-  if (ADMIT_ORDER_FIELDS.some(([k]) => p[k])) {
-    html += buildDoctorsOrderPageHTML({ ...d, diet: p.admDiet||'', ivf: p.admIvf||'', labsOrdered: p.admLabsOrdered||'', meds: p.admMeds||'', plan: p.admPlan||'' });
+  if (ADMIT_ORDER_FIELDS.some(([k]) => ao[k])) {
+    html += buildDoctorsOrderPageHTML({ ...d, diet: ao.admDiet, ivf: ao.admIvf, labsOrdered: ao.admLabsOrdered, meds: ao.admMeds, plan: ao.admPlan });
   }
   openPrintWindow(html, `History & PE — ${d.name||''}`);
 }
@@ -2073,12 +2189,20 @@ async function saveRoundsNotes() {
     plan: document.getElementById('r-plan').value.trim(),
     remarks: document.getElementById('r-remarks').value.trim()
   };
+  // Ward / bed aren't rounds notes — they're facts about where the patient is, so they go straight
+  // to the record instead of sitting pending until charted.
+  const newWard = document.getElementById('r-ward').value;
+  const newRoom = document.getElementById('r-room').value.trim();
+  const moved = {};
+  if (newWard && newWard !== p.ward) moved.ward = newWard;
+  if (newRoom !== (p.room||'')) moved.room = newRoom;
+  if (Object.keys(moved).length) await db.ref('patients/'+id).update(moved);
   closeRoundsModal();
   const hasContent = pending.ss || pending.dx || pending.labsOrdered || pending.labsPending.length || pending.labs || pending.orders || pending.plan || pending.remarks;
   if (!hasContent) {
     // nothing entered — clear any pending state back to neutral
     await db.ref('patients/'+id+'/round').remove();
-    showToast('No notes entered — patient cleared');
+    showToast(Object.keys(moved).length ? '✓ Ward / bed updated' : 'No notes entered — patient cleared');
     return;
   }
   const round = { status:'pending', pending, visitedAt: Date.now() };
@@ -2235,6 +2359,9 @@ function uid() { return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8
 function findPatient(id) {
   if (patients[id]) return { p: patients[id], ref: 'patients/'+id };
   if (discharged[id]) return { p: discharged[id], ref: 'discharged/'+id };
+  // full-archive search results aren't in the `discharged` map (they're a one-off fetch)
+  const hit = archiveSearchResults?.find(x => x.id === id);
+  if (hit) return { p: hit, ref: 'discharged/'+id };
   return { p: null, ref: null };
 }
 
@@ -2454,17 +2581,20 @@ function openEditModal(id) {
   const p = patients[id]; if (!p) return;
   document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
   document.getElementById('edit-id').value = id;
-  ['name','age','sex','date','ward','room','physician','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks',
+   'admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight'].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
   document.getElementById('f-age-unit').value = p.ageUnit || 'yrs';
   document.getElementById('f-priority').checked = !!p.priority;
-  document.getElementById('history-pe-section').style.display = 'none';
+  // History & PE stays editable after day 1 — it's often written up after the fact, and a
+  // mistyped HPI or admitting PE shouldn't be frozen into the record
+  document.getElementById('history-pe-section').style.display = '';
   document.getElementById('soap-section').style.display = '';
   document.getElementById('labs-results-group').style.display = '';
   document.getElementById('labs-results-toggle-btn').style.display = 'none';
   document.getElementById('f-labs').style.display = '';
-  document.getElementById('print-admission-btn').style.display = 'none';
+  document.getElementById('print-admission-btn').style.display = '';
   document.getElementById('patient-modal').classList.add('open');
   updateMedsPreview('f-meds','f-meds-preview');
   updateMedsPreview('f-plan','f-plan-preview');
@@ -2521,15 +2651,15 @@ async function savePatient() {
   };
   // Preserve any pending rounds notes so editing outside rounds mode doesn't wipe them
   if (existingId && patients[existingId]?.round) data.round = patients[existingId].round;
-  // History & PE is captured once at admission; the edit form never shows/touches it — carry it forward
+  // History & PE and Height/Weight are entered at admission but stay editable afterwards — the
+  // form shows them in both modes, so they're always read straight from it
+  ['admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight'].forEach(f => {
+    data[f] = document.getElementById('f-'+f).value.trim();
+  });
   if (!existingId) {
-    ['admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe'].forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
     // Admit form hides Diagnosis/Assessment & Signs and Symptoms — day 1 defaults to the admitting Dx/CC
     data.dx = data.admDx;
     data.ss = data.cc;
-    // Height/Weight, like History & PE, are captured once at admission
-    data.height = document.getElementById('f-height').value.trim();
-    data.weight = document.getElementById('f-weight').value.trim();
     // exact admission timestamp — drives the "Today's Admissions" 24h shift (9am–9am) count/filter
     data.admittedAt = Date.now();
     // Snapshot the admitting orders so the original Doctor's Order can be reviewed/printed later,
@@ -2537,10 +2667,8 @@ async function savePatient() {
     ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([live,snap]) => { data[snap] = data[live]; });
   } else {
     const old = patients[existingId] || {};
-    ['admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe'].forEach(f => { if (old[f]) data[f] = old[f]; });
-    if (old.height) data.height = old.height;
-    if (old.weight) data.weight = old.weight;
     if (old.admittedAt) data.admittedAt = old.admittedAt;
+    // the admitting-orders snapshot is edited from the History modal, not here — carry it through
     ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([,snap]) => { if (old[snap]) data[snap] = old[snap]; });
   }
   await db.ref('patients/'+id).set(data);
@@ -2568,24 +2696,81 @@ function resetCensusFilters() {
   clearSearch('search-input', renderPatients);
 }
 
+// 'YYYY-MM-DD' for a timestamp, in local (Manila) time — toISOString() would shift the day
+function localDateStr(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// A date the user picked becomes a timestamp. Today keeps the real clock time so same-day ordering
+// in the Archive still works; a back-dated day lands at noon so it can't drift across midnight.
+function dateToTs(dateStr, existingTs) {
+  if (!dateStr) return existingTs || Date.now();
+  if (existingTs && localDateStr(existingTs) === dateStr) return existingTs;
+  if (dateStr === localDateStr(Date.now())) return Date.now();
+  return new Date(dateStr + 'T12:00:00').getTime();
+}
+
 function promptDischarge(id, name) {
   dischargeId = id;
+  const p = patients[id] || {};
   document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to the Archive and can be re-admitted from there at any time.`;
+  document.getElementById('dis-date').value = localDateStr(Date.now());
+  const sel = document.getElementById('dis-disposition');
+  sel.innerHTML = DISPOSITION_OPTIONS.map(o => `<option>${o}</option>`).join('') + '<option value="Other">Other (specify)</option>';
+  const other = document.getElementById('dis-disposition-other');
+  if (p.disposition && DISPOSITION_OPTIONS.includes(p.disposition)) {
+    sel.value = p.disposition; other.style.display = 'none'; other.value = '';
+  } else if (p.disposition) {
+    sel.value = 'Other'; other.style.display = ''; other.value = p.disposition;
+  } else {
+    sel.value = DISPOSITION_OPTIONS[0];   // 'Discharged Improved' is the default
+    other.style.display = 'none'; other.value = '';
+  }
+  document.getElementById('dis-homemeds').value = p.homeMeds || '';
+  document.getElementById('dis-instructions').value = p.specialInstructions || '';
+  updateMedsPreview('dis-homemeds','dis-homemeds-preview');
   document.getElementById('discharge-modal').classList.add('open');
 }
 function closeDischargeModal() { document.getElementById('discharge-modal').classList.remove('open'); dischargeId=null; }
-function dischargeOpenAbstract() { const id = dischargeId; closeDischargeModal(); openAbstractPrompt(id); }
-function dischargeOpenMedCert() { const id = dischargeId; closeDischargeModal(); openMedCertPrompt(id, true); }
+
+// what the discharge form is currently holding
+function readDischargeForm() {
+  const sel = document.getElementById('dis-disposition').value;
+  return {
+    dischargeDate: document.getElementById('dis-date').value || localDateStr(Date.now()),
+    disposition: (sel === 'Other' ? document.getElementById('dis-disposition-other').value.trim() : sel) || '',
+    homeMeds: document.getElementById('dis-homemeds').value.trim(),
+    specialInstructions: document.getElementById('dis-instructions').value.trim()
+  };
+}
+// Abstract / Med Cert reuse these same fields — save what's typed first so nothing is lost when
+// the discharge dialog closes to make way for them.
+async function stashDischargeForm(id) {
+  const f = readDischargeForm();
+  if (patients[id]) await db.ref('patients/'+id).update({ disposition: f.disposition, homeMeds: f.homeMeds, specialInstructions: f.specialInstructions });
+}
+async function dischargeOpenAbstract() { const id = dischargeId; await stashDischargeForm(id); closeDischargeModal(); openAbstractPrompt(id); }
+async function dischargeOpenMedCert() { const id = dischargeId; await stashDischargeForm(id); closeDischargeModal(); openMedCertPrompt(id, true); }
+
 async function confirmDischarge() {
   if (!dischargeId) return;
-  const id = dischargeId; closeDischargeModal();
+  const id = dischargeId;
+  const f = readDischargeForm();
+  closeDischargeModal();
   const p = patients[id];
   if (p) {
     // move to the Archive (kept indefinitely; admin can permanently delete from there)
-    await db.ref('discharged/'+id).set({ ...p, dischargedAt: Date.now() });
+    await db.ref('discharged/'+id).set({
+      ...p,
+      disposition: f.disposition,
+      homeMeds: f.homeMeds,
+      specialInstructions: f.specialInstructions,
+      dischargeDate: f.dischargeDate,
+      dischargedAt: dateToTs(f.dischargeDate)
+    });
   }
   await db.ref('patients/'+id).remove();
-  showToast('Patient discharged — kept in Recently Discharged for 48h');
+  showToast('✓ Patient discharged — moved to Archive');
 }
 
 /* ===== PRINT / ENDORSEMENT ===== */
@@ -2706,7 +2891,7 @@ function doPrint() {
 }
 
 /* ===== MEDICAL ABSTRACT ===== */
-const DISPOSITION_OPTIONS = ['Discharged Improved','Discharged Against Medical Advice (HAMA)','Transferred to Another Facility','Absconded','Expired'];
+const DISPOSITION_OPTIONS = ['Discharged Improved','Referred to Another Facility','Discharged Against Medical Advice (HAMA)','Transferred to Another Facility','Absconded','Expired'];
 
 function openAbstractPrompt(id) {
   const { p } = findPatient(id); if (!p) return;
