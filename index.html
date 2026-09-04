@@ -141,6 +141,29 @@ if ('serviceWorker' in navigator) {
   .priority-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--danger);background:var(--danger-bg);border:1px solid #5a2222;padding:2px 8px;border-radius:10px;margin-top:5px}
   .no-history-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:#a8730a;background:#3a2d10;border:1px solid #5a4515;padding:2px 8px;border-radius:10px;margin-top:5px;margin-left:5px}
   .history-btn-warn{color:#a8730a!important;border-color:#5a4515!important}
+
+  /* MGH — "may go home", cleared for discharge. Same pill treatment as priority, in green. */
+  .patient-card.mgh{border-color:#0d5c38;box-shadow:0 0 0 1px #0d5c38,var(--shadow)}
+  .mgh-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:#34d399;background:#052e1c;border:1px solid #0d5c38;padding:2px 8px;border-radius:10px;margin-top:5px;margin-left:5px}
+  .switch.switch-green input:checked + .track{background:#052e1c;border-color:#0d5c38}
+  .switch.switch-green input:checked + .track::after{background:#34d399}
+
+  /* OB / newborn tags */
+  .ob-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--ob-c);background:var(--ob-bg);border:1px solid #5a3010;padding:2px 8px;border-radius:10px;margin-top:5px;margin-left:5px}
+  .nb-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--pedia-c);background:var(--pedia-bg);border:1px solid #0a3050;padding:2px 8px;border-radius:10px;margin-top:5px;margin-left:5px}
+  .type-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .type-tab{flex:1;min-width:120px;text-align:center;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;user-select:none;transition:all .15s}
+  .type-tab:hover{border-color:var(--accent)}
+  .type-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--text)}
+  .section-head{grid-column:1/-1;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);padding-bottom:6px;margin:4px 0 2px}
+
+  /* current-diagnosis highlight on cards — muted, for scanning during endorsement */
+  .card-field.dx-current{background:rgba(79,126,248,.10);border-left:2px solid rgba(79,126,248,.55);border-radius:0 6px 6px 0;padding:4px 8px 4px 7px;margin:2px 0 6px -2px}
+  .card-field.dx-current .field-label{color:#8fa9f5}
+  .card-field.dx-current .field-value{color:var(--text);font-weight:500}
+  .pending-block .card-field.dx-current{background:rgba(251,191,36,.10);border-left-color:rgba(251,191,36,.55)}
+  .pending-block .card-field.dx-current .field-label{color:#e0b84a}
+  .pending-block .card-field.dx-current .field-value{color:#f4e6bd}
   .switch{position:relative;display:inline-flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
   .switch input{position:absolute;opacity:0;width:0;height:0}
   .switch .track{width:44px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--border2);transition:all .2s;position:relative;flex-shrink:0}
@@ -162,9 +185,19 @@ if ('serviceWorker' in navigator) {
   .round-progress{font-size:13px;color:var(--text2);font-weight:600}
 
   /* labs picker — click-to-toggle chips for ordering common labs + pending/result chips */
-  .labs-picker-box{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;margin-bottom:10px}
-  .lab-category-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px}
-  .lab-category-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .labs-picker-box{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;margin-bottom:10px}
+  /* categories are collapsed accordions by default — the full list expanded at once was an
+     unreadable wall of chips. Open ones, and any with a lab already ticked, stay expanded. */
+  /* flex-shrink:0 matters — without it the scrolling flex column squeezes every collapsed
+     header down until its label is clipped instead of letting the box scroll */
+  .lab-category{border:1px solid var(--border);border-radius:7px;background:var(--surface);overflow:hidden;flex:0 0 auto}
+  .lab-category-title{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);padding:8px 10px;cursor:pointer;user-select:none;width:100%;background:none;border:none;font-family:inherit;text-align:left}
+  .lab-category-title:hover{background:var(--surface2);color:var(--text)}
+  .lab-category-caret{font-size:9px;color:var(--text3);transition:transform .15s;flex-shrink:0}
+  .lab-category.open .lab-category-caret{transform:rotate(90deg)}
+  .lab-category-count{margin-left:auto;font-size:9px;font-weight:800;color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent);padding:1px 7px;border-radius:9px;letter-spacing:.3px}
+  .lab-category-chips{display:none;flex-wrap:wrap;gap:6px;padding:2px 10px 10px}
+  .lab-category.open .lab-category-chips{display:flex}
   .lab-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:16px;border:1px solid var(--border2);background:var(--surface3);font:inherit;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;line-height:1.3}
   .lab-chip.checked{background:var(--accent-dim);border-color:var(--accent);color:var(--text)}
   .labs-pending-box{display:flex;flex-wrap:wrap;gap:6px 8px}
@@ -205,6 +238,7 @@ if ('serviceWorker' in navigator) {
   .form-group.full{grid-column:1/-1}
   #history-pe-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
   #soap-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #ob-section,#nb-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
   label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
   input,select,textarea{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface2);transition:all .15s;outline:none}
   input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,126,248,.18);background:var(--surface3)}
@@ -263,7 +297,7 @@ if ('serviceWorker' in navigator) {
        the caret to visually render on the wrong line while typing (esp. in Rounds Mode textareas) */
     input,select,textarea{font-size:16px}
   }
-  @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
+  @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid,#history-pe-section,#soap-section,#ob-section,#nb-section{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -362,6 +396,7 @@ if ('serviceWorker' in navigator) {
           <div class="tab" data-w="OB" onclick="setFilter('OB',this)">OB Ward</div>
         </div>
         <button class="btn btn-outline btn-sm" id="priority-toggle" onclick="togglePriorityOnly()" title="Show only priority/critical patients across all wards">⚡<span class="btn-label-full"> Priority Only</span></button>
+        <button class="btn btn-outline btn-sm" id="mgh-toggle" onclick="toggleMghOnly()" title="Show only patients flagged MGH — may go home / cleared for discharge">🏠<span class="btn-label-full"> MGH Only</span></button>
         <button class="btn btn-outline btn-sm" id="today-toggle" onclick="toggleTodayOnly()" title="Show only patients admitted this shift (9am–9am)">🌅<span class="btn-label-full"> Today's Admissions</span></button>
         <select id="doctor-filter" class="btn-outline btn-sm" style="padding:8px 12px;border-radius:8px;cursor:pointer" onchange="setDoctorFilter(this.value)" title="Sort/filter by admitting physician">
           <option value="all">👤 All Physicians</option>
@@ -418,6 +453,8 @@ if ('serviceWorker' in navigator) {
             <div class="tab" data-w="OB" onclick="setRoundsFilter('OB',this)">OB Ward</div>
           </div>
           <button class="btn btn-outline btn-sm" id="uncharted-toggle" onclick="toggleUnchartedOnly()" title="Show only patients still pending, not yet marked Charted">🆕<span class="btn-label-full"> Uncharted Only</span></button>
+          <button class="btn btn-outline btn-sm" id="rounds-priority-toggle" onclick="toggleRoundsPriorityOnly()" title="Round on the priority/critical patients first — show only them">⚡<span class="btn-label-full"> Priority Only</span></button>
+          <button class="btn btn-outline btn-sm" id="rounds-mgh-toggle" onclick="toggleRoundsMghOnly()" title="Show only patients flagged May Go Home">🏠<span class="btn-label-full"> MGH Only</span></button>
         </div>
         <button class="btn btn-outline btn-sm" onclick="startNewRound()">🔄 Start New Round</button>
       </div>
@@ -438,7 +475,16 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-id">
+      <input type="hidden" id="f-motherId">
       <div class="form-grid">
+        <div class="form-group full">
+          <label>Admission Type</label>
+          <div class="type-tabs" id="admit-type-tabs">
+            <div class="type-tab active" data-t="general" onclick="setAdmitType('general')">🧍 General</div>
+            <div class="type-tab" data-t="parturient" onclick="setAdmitType('parturient')">🤰 Parturient / OB</div>
+            <div class="type-tab" data-t="newborn" onclick="setAdmitType('newborn')">👶 Newborn</div>
+          </div>
+        </div>
         <div class="form-group full">
           <label>Full Name *</label>
           <input type="text" id="f-name" placeholder="Last, First MI" oninput="autoSpaceCommas(this)" onblur="this.value = formatName(this.value)">
@@ -495,6 +541,175 @@ if ('serviceWorker' in navigator) {
             <span class="switch-label">⚡ Flag as priority / critical patient</span>
           </label>
         </div>
+        <div class="form-group full">
+          <label>MGH</label>
+          <label class="switch switch-green">
+            <input type="checkbox" id="f-mgh">
+            <span class="track"></span>
+            <span class="switch-label">🏠 MGH — may go home / cleared for discharge</span>
+          </label>
+        </div>
+
+        <!-- ===== Parturient (OB) format — shown only for an OB admission ===== -->
+        <div id="ob-section" style="display:none">
+          <div class="section-head">🤰 Obstetric Record</div>
+          <div class="form-group">
+            <label>OB Score (G / P)</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span style="font-weight:700;color:var(--text3)">G</span>
+              <input type="number" id="f-obG" min="0" max="20" placeholder="3" style="flex:1">
+              <span style="font-weight:700;color:var(--text3)">P</span>
+              <input type="number" id="f-obP" min="0" max="20" placeholder="2" style="flex:1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>TPAL (Term-Preterm-Abortion-Living)</label>
+            <input type="text" id="f-obTpal" placeholder="e.g. 2-0-0-2">
+          </div>
+          <div class="form-group">
+            <label>LMP</label>
+            <input type="date" id="f-obLmp" onchange="calcObDates()">
+          </div>
+          <div class="form-group">
+            <label>EDC / EDD</label>
+            <input type="date" id="f-obEdc">
+          </div>
+          <div class="form-group">
+            <label>AOG (age of gestation)</label>
+            <input type="text" id="f-obAog" placeholder="e.g. 38 2/7 weeks">
+          </div>
+          <div class="form-group">
+            <label>Delivery</label>
+            <select id="f-obDelivery">
+              <option value="">Select...</option>
+              <option>Not yet delivered (in labor)</option>
+              <option>NSD (normal spontaneous delivery)</option>
+              <option>CS (cesarean section)</option>
+              <option>Assisted — vacuum extraction</option>
+              <option>Assisted — outlet forceps</option>
+              <option>Breech delivery</option>
+              <option>Abortion / miscarriage</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date Delivered</label>
+            <input type="date" id="f-obDelDate">
+          </div>
+          <div class="form-group">
+            <label>Time Delivered</label>
+            <input type="time" id="f-obDelTime">
+          </div>
+          <div class="form-group">
+            <label>BOW / ROM</label>
+            <input type="text" id="f-obBow" placeholder="e.g. SROM 0430H, clear / intact">
+          </div>
+          <div class="form-group">
+            <label>Perineum</label>
+            <input type="text" id="f-obPerineum" placeholder="e.g. Right mediolateral episiotomy, 2nd degree laceration">
+          </div>
+          <div class="form-group">
+            <label>Estimated Blood Loss</label>
+            <input type="text" id="f-obBloodLoss" placeholder="e.g. 250 mL">
+          </div>
+          <div class="form-group">
+            <label>Placenta</label>
+            <input type="text" id="f-obPlacenta" placeholder="e.g. Delivered complete, Schultze">
+          </div>
+          <div class="form-group">
+            <label>Anesthesia</label>
+            <input type="text" id="f-obAnesthesia" placeholder="e.g. Local infiltration / Spinal">
+          </div>
+          <div class="form-group">
+            <label>Indication (if CS / assisted)</label>
+            <input type="text" id="f-obIndication" placeholder="e.g. CPD, fetal distress, previous CS">
+          </div>
+          <div class="form-group full">
+            <label>Prenatal Care / OB Remarks</label>
+            <textarea id="f-obPrenatal" placeholder="Prenatal check-ups, where, TT status, prior OB history, complications..."></textarea>
+          </div>
+        </div>
+
+        <!-- ===== Newborn format — shown only for a newborn admission ===== -->
+        <div id="nb-section" style="display:none">
+          <div class="section-head">👶 Newborn Record</div>
+          <div class="form-group full">
+            <label>Mother's Name</label>
+            <input type="text" id="f-nbMotherName" placeholder="Last, First MI">
+            <div id="nb-mother-link" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="f-nbBirthDate">
+          </div>
+          <div class="form-group">
+            <label>Time of Birth</label>
+            <input type="time" id="f-nbBirthTime">
+          </div>
+          <div class="form-group">
+            <label>Birth Weight (grams)</label>
+            <input type="number" id="f-nbWeight" min="0" step="1" placeholder="e.g. 3100">
+          </div>
+          <div class="form-group">
+            <label>Length (cm)</label>
+            <input type="number" id="f-nbLength" min="0" step="0.1" placeholder="e.g. 49">
+          </div>
+          <div class="form-group">
+            <label>Head Circumference (cm)</label>
+            <input type="number" id="f-nbHeadCirc" min="0" step="0.1" placeholder="e.g. 34">
+          </div>
+          <div class="form-group">
+            <label>Chest Circumference (cm)</label>
+            <input type="number" id="f-nbChestCirc" min="0" step="0.1" placeholder="e.g. 32">
+          </div>
+          <div class="form-group">
+            <label>APGAR 1 min</label>
+            <input type="text" id="f-nbApgar1" placeholder="e.g. 8">
+          </div>
+          <div class="form-group">
+            <label>APGAR 5 min</label>
+            <input type="text" id="f-nbApgar5" placeholder="e.g. 9">
+          </div>
+          <div class="form-group">
+            <label>AOG (by Ballard / by dates)</label>
+            <input type="text" id="f-nbAog" placeholder="e.g. 38 weeks by Ballard">
+          </div>
+          <div class="form-group">
+            <label>Maturity</label>
+            <select id="f-nbMaturity">
+              <option value="">Select...</option>
+              <option>Term</option><option>Preterm</option><option>Post-term</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Growth</label>
+            <select id="f-nbGrowth">
+              <option value="">Select...</option>
+              <option>AGA (appropriate for gestational age)</option>
+              <option>SGA (small for gestational age)</option>
+              <option>LGA (large for gestational age)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Delivered via</label>
+            <select id="f-nbDelivery">
+              <option value="">Select...</option>
+              <option>NSD (normal spontaneous delivery)</option>
+              <option>CS (cesarean section)</option>
+              <option>Assisted — vacuum extraction</option>
+              <option>Assisted — outlet forceps</option>
+              <option>Breech delivery</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Prophylaxis Given</label>
+            <input type="text" id="f-nbProphylaxis" placeholder="e.g. Vitamin K 1mg IM, Erythromycin eye ointment, Hepatitis B vaccine, BCG">
+          </div>
+          <div class="form-group full">
+            <label>Newborn Screening / Hearing Test</label>
+            <input type="text" id="f-nbScreening" placeholder="e.g. NBS taken 09/06 0800H; hearing screening pending">
+          </div>
+        </div>
+
         <div id="history-pe-section">
           <div class="form-group full">
             <div class="label-row"><label>Chief Complaint</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-cc')">📋 Copy</button></div>
@@ -537,7 +752,7 @@ if ('serviceWorker' in navigator) {
             <input type="number" id="f-weight" placeholder="e.g. 60" min="0" step="0.1">
           </div>
           <div class="form-group full">
-            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
+            <div class="label-row"><label>Admitting Diagnosis</label><button type="button" class="btn btn-outline btn-sm" id="admdx-build-btn" style="display:none" tabindex="-1" onclick="buildAdmDxFromFormat()" title="Re-sync the Admitting Diagnosis with the OB / newborn fields above (use after editing it by hand)">✨ Rebuild Dx</button><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-admDx')">📋 Copy</button></div>
             <textarea id="f-admDx" placeholder="Diagnosis at the time of admission..."></textarea>
             <input type="text" id="dxsearch-f-admDx" placeholder="Search ICD-10 diagnosis..." oninput="renderDxPicker('f-admDx')" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDx('f-admDx');}">
             <div class="dx-picker-box" id="dxlist-f-admDx"></div>
@@ -913,6 +1128,20 @@ if ('serviceWorker' in navigator) {
           <label>Bed / Room No.</label>
           <input type="text" id="r-room" placeholder="e.g. Bed 3, Room 201">
         </div>
+        <div class="form-group full">
+          <label class="switch">
+            <input type="checkbox" id="r-priority">
+            <span class="track"></span>
+            <span class="switch-label">⚡ Priority / critical</span>
+          </label>
+        </div>
+        <div class="form-group full">
+          <label class="switch switch-green">
+            <input type="checkbox" id="r-mgh">
+            <span class="track"></span>
+            <span class="switch-label">🏠 MGH — may go home</span>
+          </label>
+        </div>
       </div>
       <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Ward and bed save straight to the record. Add today's new findings. They stay as <strong style="color:#fbbf24">pending</strong> until you mark the patient charted — then they merge into the record with a date stamp.</div>
       <div class="form-grid">
@@ -1204,6 +1433,7 @@ async function deleteMedAbbrev(key) {
 
 let patients = {}, db = null, currentFilter = 'all', roundsFilter = 'all', dischargeId = null, priorityOnly = false, unchartedOnly = false;
 let todayOnly = false, doctorFilter = 'all';
+let mghOnly = false, roundsPriorityOnly = false, roundsMghOnly = false;
 
 /* ===== COMMON LABS PICKER — ordered/pending labs as checkboxes instead of free text =====
    commonLabs/ in Firebase is a shared, ever-growing list (like medAbbrev/) that any signed-in
@@ -1227,11 +1457,36 @@ const LAB_CATEGORIES = {
   'Microbiology': ['Blood Culture and Sensitivity','Urine Culture and Sensitivity','Sputum GeneXpert','Sputum AFB'],
   'Urinalysis / Fecalysis': ['Urinalysis','Fecalysis'],
   'Imaging': ['Chest X-ray','12-L ECG','2D Echo with Doppler','Whole Abdomen Ultrasound','KUB Ultrasound','Pelvic Ultrasound','CT Scan Cranial'],
+  'OB / Newborn': ['Newborn Screening','Newborn Hearing Screening','Cord Blood Typing','Bilirubin (Total/Direct)','75g OGTT','Group B Strep Screening','Congenital Anomaly Scan','Biophysical Profile (BPS)'],
 };
 const LAB_CATEGORY_ORDER = Object.keys(LAB_CATEGORIES).concat('Other');
 const labCategoryLookup = {};
 Object.entries(LAB_CATEGORIES).forEach(([cat, names]) => names.forEach(n => labCategoryLookup[n] = cat));
-function labCategoryOf(name) { return labCategoryLookup[name] || 'Other'; }
+
+// Staff add labs to the shared list in whatever wording and casing they please ("FT 3 – 4.1",
+// "CT-Scan: Whole Abdomen", "BLEEDING TIME"), so an exact-name lookup dumped most of them into
+// "Other". These keyword rules file anything unlisted — including labs added in future — into a
+// real category. First match wins, so the order below is deliberate: the narrow rules (newborn,
+// culture) come before the broad ones (blood typing, urine) that would otherwise swallow them.
+const LAB_CATEGORY_RULES = [
+  ['OB / Newborn',          /newborn|\bnbs\b|ballard|cord blood|fetal|biophysical|\bbps\b|anomaly scan|group b strep|obstetric|nuchal/],
+  ['Microbiology',          /culture|sensitivity|\bc\s*\/?\s*s\b|gram stain|\bkoh\b|\bafb\b|genexpert|gene xpert|acid[- ]fast|fungal|\btb\b dna|mycobact/],
+  ['Imaging',               /ultraso|\butz\b|\buts\b|x-?ray|radiograph|\bct\b|ct-?scan|\bmri\b|\becg\b|\bekg\b|echo|doppler|mammogra|fluorosc|\bscan\b|imaging|\bxr\b|\bapl\b|chest\s*(ap|pa|lat)|\bkub\b(?!.*urin)/],
+  ['Hematology',            /\bcbc\b|complete blood count|bleeding time|clotting time|platelet|blood typing|crossmatch|cross-?match|coagulat|prothrombin|\bpt\b|\bptt\b|\baptt\b|\binr\b|\besr\b|reticulocyt|blood smear|h[ae]moglobin|h[ae]matocrit|coombs|g6pd|sickling/],
+  ['Serology / Immunology', /hbsag|hepatitis|anti-?hcv|\bhcv\b|\bhbv\b|\bhiv\b|dengue|covid|antigen|antibod|\big[gme]\b|\brpr\b|\bvdrl\b|syphilis|\bana\b|rheumatoid|\bra\b factor|\baso\b|widal|typhidot|leptospira|serolog|pregnancy test|\bupt\b|\bhcg\b|allergy|immunoglob/],
+  ['Urinalysis / Fecalysis',/urinalysis|\burine\b|fecalysis|\bstool\b|\bfobt\b|occult blood|\bova\b|parasit/],
+  ['Blood Chemistry',       /\bfbs\b|\brbs\b|hba1c|\bbun\b|creatinin|sodium|potassium|chloride|calcium|magnesium|phosphor|sgpt|\balt\b|sgot|\bast\b|lipid|cholesterol|triglycerid|uric acid|albumin|total protein|bilirubin|alkaline phosphat|amylase|lipase|troponin|ck-?mb|\bcpk\b|\bldh\b|ferritin|\biron\b|\btibc\b|\btsh\b|\bft\s*[34]\b|\bt[34]\b|thyroid|ogtt|glucose|electrolyte|\babg\b|procalcitonin|\bcrp\b|d-?dimer|\bbnp\b|\bpsa\b|\bhdl\b|\bldl\b|\bgfr\b|blood chem|blood sugar|\bcbg\b|\bhgt\b|\brbg\b/],
+];
+const labCategoryMemo = {};
+function labCategoryOf(name) {
+  if (labCategoryLookup[name]) return labCategoryLookup[name];
+  if (labCategoryMemo[name] !== undefined) return labCategoryMemo[name];
+  const n = String(name || '').toLowerCase();
+  const hit = LAB_CATEGORY_RULES.find(([, re]) => re.test(n));
+  return (labCategoryMemo[name] = hit ? hit[0] : 'Other');
+}
+// case-insensitive so "BLEEDING TIME" files next to "Bilirubin", not above everything
+function labNameCompare(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); }
 let commonLabsList = [];
 let commonLabsSeeded = false;
 function watchCommonLabs() {
@@ -1256,13 +1511,19 @@ function watchCommonLabs() {
 // labsPickerTarget picks which modal's fields the picker reads/writes: 'f' = Admit/Edit modal
 // (f-labsOrdered / f-labs), 'r' = Rounds modal (r-labsOrdered / r-labs)
 let labsPickerTarget = 'f', currentLabsPending = [], labsResultDraftFor = null;
+// Which category accordions the user has opened this time round. Everything starts closed;
+// a category is force-opened while it holds a ticked lab, or while a search is narrowing things.
+let labCatOpen = {};
+function toggleLabCategory(cat) { labCatOpen[cat] = !labCatOpen[cat]; renderLabsPicker(); }
 function labsField(name) { return document.getElementById(labsPickerTarget + '-' + name); }
 function parseLabsOrderedFallback(str) { return (str||'').split(/[,\n]+/).map(s=>s.trim()).filter(Boolean); }
 
 function initLabsPicker(target, pendingArr) {
   labsPickerTarget = target;
   currentLabsPending = pendingArr ? [...pendingArr] : [];
+  sortLabsPending();
   labsResultDraftFor = null;
+  labCatOpen = {};
   const search = labsField('labs-picker-search');
   if (search) search.value = '';
   renderLabsPicker();
@@ -1272,20 +1533,29 @@ function initLabsPicker(target, pendingArr) {
 function renderLabsPicker() {
   const searchEl = labsField('labs-picker-search');
   const search = (searchEl?.value || '').toLowerCase().trim();
-  const names = Array.from(new Set([...commonLabsList, ...currentLabsPending])).sort((a,b)=>a.localeCompare(b));
+  const names = Array.from(new Set([...commonLabsList, ...currentLabsPending])).sort(labNameCompare);
   const filtered = search ? names.filter(n => n.toLowerCase().includes(search)) : names;
   const listEl = labsField('labs-picker-list');
   if (listEl) {
     const groups = {};
     filtered.forEach(n => { const cat = labCategoryOf(n); (groups[cat] = groups[cat] || []).push(n); });
-    let html = LAB_CATEGORY_ORDER.filter(cat => groups[cat]?.length).map(cat => `
-      <div class="lab-category">
-        <div class="lab-category-title">${esc(cat)}</div>
+    Object.values(groups).forEach(list => list.sort(labNameCompare));
+    let html = LAB_CATEGORY_ORDER.filter(cat => groups[cat]?.length).map(cat => {
+      const nChecked = groups[cat].filter(n => currentLabsPending.includes(n)).length;
+      // open when: the user opened it, it already has an ordered lab, or a search is filtering
+      const open = !!labCatOpen[cat] || nChecked > 0 || !!search;
+      return `
+      <div class="lab-category${open?' open':''}">
+        <button type="button" class="lab-category-title" data-cat="${esc(cat)}" onclick="toggleLabCategory(this.dataset.cat)">
+          <span class="lab-category-caret">▶</span><span>${esc(cat)}</span>
+          <span class="lab-category-count">${nChecked ? nChecked + ' ordered' : groups[cat].length}</span>
+        </button>
         <div class="lab-category-chips">${groups[cat].map(n => {
           const checked = currentLabsPending.includes(n);
           return `<button type="button" class="lab-chip${checked?' checked':''}" data-lab="${esc(n)}" onclick="toggleLabPending(this.dataset.lab)">${checked?'✓ ':''}${esc(n)}</button>`;
         }).join('')}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     const exactExists = names.some(n => n.toLowerCase() === search);
     if (search && !exactExists) {
       html += `<button type="button" class="btn btn-outline btn-sm" onclick="addCustomLabFromSearch()">➕ Add "${esc(searchEl.value.trim())}"</button>`;
@@ -1297,9 +1567,18 @@ function renderLabsPicker() {
   syncLabsOrderedField();
 }
 
+// Keep the pending chips (and the "Labs Ordered" text built from them) grouped by category and
+// alphabetical inside it, so the order on the card matches the order in the picker.
+function sortLabsPending() {
+  currentLabsPending.sort((a,b) => {
+    const ca = LAB_CATEGORY_ORDER.indexOf(labCategoryOf(a)), cb = LAB_CATEGORY_ORDER.indexOf(labCategoryOf(b));
+    return ca !== cb ? ca - cb : labNameCompare(a, b);
+  });
+}
+
 function toggleLabPending(name) {
   if (currentLabsPending.includes(name)) currentLabsPending = currentLabsPending.filter(n => n !== name);
-  else currentLabsPending.push(name);
+  else { currentLabsPending.push(name); sortLabsPending(); }
   renderLabsPicker();
   renderLabsPendingList();
 }
@@ -1313,7 +1592,7 @@ async function addCustomLabFromSearch() {
   // shared-list save below succeeds — otherwise a failed/slow write left the click looking
   // like it did nothing, and a retry would wrongly skip the save (name already in the local
   // list from the first attempt) while still never having reached the database.
-  if (!currentLabsPending.includes(name)) currentLabsPending.push(name);
+  if (!currentLabsPending.includes(name)) { currentLabsPending.push(name); sortLabsPending(); }
   if (el) el.value = '';
   renderLabsPicker();
   renderLabsPendingList();
@@ -1810,15 +2089,18 @@ function renderRounds() {
   const filtered = all.filter(p => {
     const mw = roundsFilter==='all' || p.ward===roundsFilter;
     const mu = !unchartedOnly || p.round?.status === 'pending';
+    const mp = !roundsPriorityOnly || p.priority;
+    const mg = !roundsMghOnly || p.mgh;
     const pnd = p.round?.pending || {};
     const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan,
                             pnd.ss,pnd.dx,pnd.labsOrdered,pnd.labs,pnd.orders,pnd.plan,pnd.remarks]
       .some(f=>(f||'').toLowerCase().includes(search));
-    return mw && mu && ms;
+    return mw && mu && ms && mp && mg;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
     if (wa!==wb) return wa-wb;
     if (!!b.priority !== !!a.priority) return b.priority ? 1 : -1;
+    if (!!b.mgh !== !!a.mgh) return b.mgh ? 1 : -1;
     return (a.room||'').localeCompare(b.room||'');
   });
 
@@ -1844,21 +2126,23 @@ function renderRounds() {
                  : st === 'charted' ? '<span class="round-pill charted">✓ CHARTED</span>' : '';
       const pend = p.round?.pending || {};
       const pendRows = [['ss','S&S'],['dx','Dx'],['labsOrdered','Labs Ord'],['labs','Labs'],['orders','Orders'],['plan','Plan'],['remarks','Note']]
-        .map(([k,lbl]) => pend[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,pend[k]))}</span></div>` : '').join('');
+        .map(([k,lbl]) => pend[k] ? `<div class="card-field${k==='dx'?' dx-current':''}"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,pend[k]))}</span></div>` : '').join('');
       const pendBlock = (st === 'pending' && pendRows)
         ? `<div class="pending-block"><div class="pending-block-title" style="display:flex;align-items:center;justify-content:space-between">🆕 Pending — not yet charted<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px" onclick="copySoap('${p.id}')">📋 Copy SOAP</button></div>${pendRows}</div>` : '';
       // full chart shown read-only, like bringing the chart to the bedside
       const chart = [['ss','S&S'],['dx','Dx'],['labsOrdered','Labs Ord'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
-        .map(([k,lbl]) => p[k] ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,p[k]))}</span></div>` : '').join('');
+        .map(([k,lbl]) => p[k] ? `<div class="card-field${k==='dx'?' dx-current':''}"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,p[k]))}</span></div>` : '').join('');
       html += `<div class="patient-card${cardCls}" style="cursor:default">
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
             <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
-            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span> ':''}${pill}
+            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span> ':''}${p.mgh?'<span class="mgh-pill">🏠 MGH</span>':''}${p.admitType==='parturient'?'<span class="ob-pill">🤰 PARTURIENT</span>':''}${p.admitType==='newborn'?'<span class="nb-pill">👶 NEWBORN</span>':''}${pill}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
+        ${linkRowHTML(p)}
+        ${formatCardRowsHTML(p)}
         ${chart}
         ${pendBlock}
         <div class="card-actions">
@@ -1882,6 +2166,8 @@ function openRoundsModal(id) {
   wsel.innerHTML = WARDS.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
   wsel.value = p.ward || '';
   document.getElementById('r-room').value = p.room || '';
+  document.getElementById('r-priority').checked = !!p.priority;
+  document.getElementById('r-mgh').checked = !!p.mgh;
   const pend = p.round?.pending || {};
   document.getElementById('r-ss').value = pend.ss || '';
   // Diagnosis/Assessment is a running working dx, not an append log — default to the current
@@ -1899,6 +2185,7 @@ function openRoundsModal(id) {
   updateMedsPreview('r-remarks','r-remarks-preview');
   initLabsPicker('r', pend.labsPending || p.labsPending || parseLabsOrderedFallback(pend.labsOrdered || p.labsOrdered));
   resetDxPicker('r-dx');
+  scrollModalTop('rounds-modal');
 }
 function closeRoundsModal() { document.getElementById('rounds-modal').classList.remove('open'); }
 
@@ -1928,8 +2215,229 @@ function fallbackCopy(text, msg) {
   document.body.removeChild(ta);
 }
 
+/* ===== ADMISSION TYPES — general / parturient (OB) / newborn =====
+   A parturient and her baby are two separate patient records (two beds, two charts, two
+   discharges), so they're linked rather than merged: the baby carries motherId, the mother's
+   card grows a "👶 Admit Newborn" button that opens a pre-filled newborn form. Twins = press
+   it twice. Everything below the type tabs is just extra fields on the same patient record. */
+const OB_FIELDS = ['obG','obP','obTpal','obLmp','obEdc','obAog','obDelivery','obDelDate','obDelTime',
+                   'obBow','obPerineum','obBloodLoss','obPlacenta','obAnesthesia','obIndication','obPrenatal'];
+const NB_FIELDS = ['nbMotherName','nbBirthDate','nbBirthTime','nbWeight','nbLength','nbHeadCirc','nbChestCirc',
+                   'nbApgar1','nbApgar5','nbAog','nbMaturity','nbGrowth','nbDelivery','nbProphylaxis','nbScreening'];
+// rows printed on the card / History view for each format
+const OB_CARD_ROWS = [['obScore','OB Score'],['obAog','AOG'],['obDelivery','Delivery'],['obDelivered','Delivered'],
+                      ['obBow','BOW/ROM'],['obPerineum','Perineum'],['obBloodLoss','EBL'],['obPlacenta','Placenta'],['obIndication','Indication']];
+const NB_CARD_ROWS = [['nbMotherName','Mother'],['nbBorn','Born'],['nbWeight','Birth Wt'],['nbApgar','APGAR'],
+                      ['nbAog','AOG'],['nbClass','Class'],['nbDelivery','Via'],['nbProphylaxis','Prophylaxis'],['nbScreening','Screening']];
+
+let currentAdmitType = 'general';
+// true while Sex holds the value setAdmitType filled in rather than one a person chose
+let sexAutoSet = false;
+
+function setAdmitType(t) {
+  currentAdmitType = t;
+  document.querySelectorAll('#admit-type-tabs .type-tab').forEach(el => el.classList.toggle('active', el.dataset.t === t));
+  document.getElementById('ob-section').style.display = t === 'parturient' ? '' : 'none';
+  document.getElementById('nb-section').style.display = t === 'newborn' ? '' : 'none';
+  document.getElementById('admdx-build-btn').style.display = t === 'general' ? 'none' : '';
+  // a diagnosis auto-written for the previous type is stale the moment the type changes
+  const admDxEl = document.getElementById('f-admDx');
+  if (admDxEl && admDxEl.value.trim() === lastAutoAdmDx) admDxEl.value = '';
+  lastAutoAdmDx = '';
+  // sensible defaults, only when the field is still untouched
+  const ward = document.getElementById('f-ward');
+  if (!ward.value) ward.value = t === 'parturient' ? 'OB' : t === 'newborn' ? 'Pedia' : '';
+  // Parturient defaults Sex to Female. Switching to Newborn must take that back — a baby's sex
+  // is unknown until someone enters it, and inheriting the mother's would quietly mis-sex the
+  // chart (and the auto-diagnosis). Only the value this function set is withdrawn.
+  const sex = document.getElementById('f-sex');
+  if (sexAutoSet && sex.value === 'Female' && t !== 'parturient') { sex.value = ''; sexAutoSet = false; }
+  if (t === 'parturient' && !sex.value) { sex.value = 'Female'; sexAutoSet = true; }
+  if (t === 'newborn') {
+    const unit = document.getElementById('f-age-unit');
+    if (!document.getElementById('f-age').value) unit.value = 'mo';
+  }
+  autoUpdateFormatDx();
+}
+
+// LMP → EDC by Naegele's rule (LMP + 1 year − 3 months + 7 days), and AOG in completed
+// weeks + days as of today. Both only fill in when the field is still blank, so a manually
+// corrected EDC/AOG (early ultrasound dating, say) is never overwritten.
+function calcObDates() {
+  const lmpStr = document.getElementById('f-obLmp').value;
+  if (!lmpStr) return;
+  const lmp = new Date(lmpStr + 'T00:00:00');
+  if (isNaN(lmp)) return;
+  const edcEl = document.getElementById('f-obEdc');
+  if (!edcEl.value) {
+    const edc = new Date(lmp);
+    edc.setFullYear(edc.getFullYear() + 1); edc.setMonth(edc.getMonth() - 3); edc.setDate(edc.getDate() + 7);
+    edcEl.value = edc.getFullYear() + '-' + String(edc.getMonth()+1).padStart(2,'0') + '-' + String(edc.getDate()).padStart(2,'0');
+  }
+  const aogEl = document.getElementById('f-obAog');
+  if (!aogEl.value) {
+    const totalDays = Math.floor((Date.now() - lmp.getTime()) / 86400000);
+    if (totalDays > 0 && totalDays < 320) aogEl.value = Math.floor(totalDays/7) + ' ' + (totalDays%7) + '/7 weeks';
+  }
+  autoUpdateFormatDx();
+}
+
+// The one-line diagnosis a parturient/newborn chart opens with, assembled from the format
+// fields so nobody has to retype the same sentence every delivery.
+function composeFormatDx() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  let line = '';
+  if (currentAdmitType === 'parturient') {
+    // nothing obstetric entered yet — don't write a content-free "Pregnancy Uterine, in labor"
+    if (!v('f-obG') && !v('f-obAog') && !v('f-obDelivery')) return '';
+    const score = v('f-obG') ? 'G' + v('f-obG') + (v('f-obP') ? 'P' + v('f-obP') : '') + (v('f-obTpal') ? ' (' + v('f-obTpal') + ')' : '') : '';
+    const del = v('f-obDelivery');
+    const delivered = del && !/not yet/i.test(del);
+    const parts = [score, 'Pregnancy Uterine' + (v('f-obAog') ? ' ' + v('f-obAog') + ' AOG' : '')];
+    parts.push(delivered ? 'delivered via ' + del.replace(/\s*\(.*\)/,'') : 'in labor');
+    if (v('f-obIndication')) parts.push('secondary to ' + v('f-obIndication'));
+    line = parts.filter(Boolean).join(', ');
+  } else if (currentAdmitType === 'newborn') {
+    if (!['f-nbMaturity','f-nbWeight','f-nbApgar1','f-nbApgar5','f-nbAog','f-nbGrowth','f-nbDelivery','f-nbMotherName'].some(v)) return '';
+    const sex = v('f-sex');
+    const baby = [v('f-nbMaturity'), 'live baby', sex === 'Male' ? 'boy' : sex === 'Female' ? 'girl' : ''].filter(Boolean).join(' ');
+    const parts = [baby];
+    if (v('f-nbAog')) parts.push(v('f-nbAog'));
+    if (v('f-nbGrowth')) parts.push(v('f-nbGrowth').replace(/\s*\(.*\)/,''));
+    if (v('f-nbWeight')) parts.push('BW ' + v('f-nbWeight') + ' g');
+    if (v('f-nbApgar1') || v('f-nbApgar5')) parts.push('APGAR ' + (v('f-nbApgar1')||'—') + '/' + (v('f-nbApgar5')||'—'));
+    if (v('f-nbDelivery')) parts.push('delivered via ' + v('f-nbDelivery').replace(/\s*\(.*\)/,''));
+    if (v('f-nbMotherName')) parts.push('to ' + v('f-nbMotherName'));
+    line = parts.filter(Boolean).join(', ');
+  }
+  return line;
+}
+
+// The Admitting Diagnosis rewrites itself as the OB / newborn fields are filled in, so the
+// diagnosis line is never out of step with the data above it. lastAutoAdmDx is what we last
+// wrote there: the moment the box says something else, the doctor has taken it over by hand and
+// we stop touching it. ("✨ Rebuild" below is the way back.)
+let lastAutoAdmDx = '';
+function autoUpdateFormatDx() {
+  if (currentAdmitType === 'general') return;
+  const ta = document.getElementById('f-admDx');
+  if (!ta) return;
+  const cur = ta.value.trim();
+  if (cur && cur !== lastAutoAdmDx) return;   // hand-edited — leave it alone
+  const line = composeFormatDx();
+  if (!line) return;
+  ta.value = line;
+  lastAutoAdmDx = line;
+}
+
+// Manual override for a diagnosis that has been hand-edited — re-syncs it to the fields.
+function buildAdmDxFromFormat() {
+  const line = composeFormatDx();
+  if (!line) { showToast('Fill in a few of the fields above first.'); return; }
+  const ta = document.getElementById('f-admDx');
+  if (ta.value.trim() === line) { showToast('Diagnosis is already up to date with the fields above.'); return; }
+  ta.value = line;
+  lastAutoAdmDx = line;
+  showToast('✓ Diagnosis rebuilt from the fields above');
+}
+
+// Every OB / newborn field (plus Sex, which decides "boy" or "girl") re-runs the composer.
+(function watchFormatDxFields() {
+  [...OB_FIELDS, ...NB_FIELDS, 'sex'].forEach(f => {
+    const el = document.getElementById('f-'+f);
+    if (!el) return;
+    el.addEventListener('input', autoUpdateFormatDx);
+    el.addEventListener('change', autoUpdateFormatDx);
+  });
+  // once a person picks a Sex themselves, it's no longer ours to withdraw
+  document.getElementById('f-sex')?.addEventListener('change', () => { sexAutoSet = false; });
+  // and if the doctor clears the box, the next keystroke in any field re-adopts it
+  const ta = document.getElementById('f-admDx');
+  if (ta) ta.addEventListener('input', () => { if (!ta.value.trim()) lastAutoAdmDx = ''; });
+})();
+
+// Opens the Admit form as a newborn, pre-filled from the mother's record. Called from the
+// "👶 Admit Newborn" button on a parturient's card.
+function openAdmitNewbornModal(motherId) {
+  const m = patients[motherId];
+  if (!m) { showToast('⚠️ Mother\'s record not found.'); return; }
+  openAdmitModal();
+  setAdmitType('newborn');
+  const surname = (m.name || '').split(',')[0].trim();
+  const existing = Object.values(patients).filter(p => p.motherId === motherId).length;
+  document.getElementById('f-name').value = 'Baby of ' + (m.name || surname) + (existing ? ' (' + (existing + 1) + ')' : '');
+  document.getElementById('f-motherId').value = motherId;
+  document.getElementById('f-nbMotherName').value = m.name || '';
+  document.getElementById('nb-mother-link').textContent = '🔗 Linked to ' + (m.name||'') + ' — ' + (m.room || wardMap[m.ward]?.label || m.ward || '');
+  document.getElementById('f-ward').value = m.ward || 'OB';
+  document.getElementById('f-room').value = m.room || '';
+  document.getElementById('f-physician').value = m.physician || currentDoctorName;
+  document.getElementById('f-age').value = '0';
+  document.getElementById('f-age-unit').value = 'mo';
+  // carry the delivery details across so they aren't retyped on the baby's chart
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-nbBirthDate').value = m.obDelDate || today;
+  document.getElementById('f-nbBirthTime').value = m.obDelTime || '';
+  if (m.obDelivery && !/not yet/i.test(m.obDelivery)) document.getElementById('f-nbDelivery').value = m.obDelivery;
+  autoUpdateFormatDx();
+  document.getElementById('modal-title').textContent = '👶 Admit Newborn of ' + (m.name || '');
+  showToast('Newborn form pre-filled from the mother — fill in the birth details');
+}
+
+// display helpers — the derived one-liners the cards and History view show
+function obScoreText(p) {
+  if (!p.obG && !p.obP && !p.obTpal) return '';
+  return (p.obG ? 'G' + p.obG : '') + (p.obP ? 'P' + p.obP : '') + (p.obTpal ? ' (' + p.obTpal + ')' : '');
+}
+function obDeliveredText(p) {
+  if (!p.obDelDate && !p.obDelTime) return '';
+  return [p.obDelDate ? fmtDate(p.obDelDate) : '', p.obDelTime || ''].filter(Boolean).join(' ');
+}
+function nbBornText(p) {
+  if (!p.nbBirthDate && !p.nbBirthTime) return '';
+  return [p.nbBirthDate ? fmtDate(p.nbBirthDate) : '', p.nbBirthTime || ''].filter(Boolean).join(' ');
+}
+function nbApgarText(p) {
+  if (!p.nbApgar1 && !p.nbApgar5) return '';
+  return (p.nbApgar1 || '—') + ' / ' + (p.nbApgar5 || '—');
+}
+function nbClassText(p) { return [p.nbMaturity, p.nbGrowth].filter(Boolean).join(', '); }
+function derivedField(p, k) {
+  if (k === 'obScore') return obScoreText(p);
+  if (k === 'obDelivered') return obDeliveredText(p);
+  if (k === 'nbBorn') return nbBornText(p);
+  if (k === 'nbApgar') return nbApgarText(p);
+  if (k === 'nbClass') return nbClassText(p);
+  if (k === 'nbWeight') return p.nbWeight ? p.nbWeight + ' g' : '';
+  return p[k] || '';
+}
+// the OB / newborn rows that appear on a patient card
+function formatCardRowsHTML(p) {
+  const rows = p.admitType === 'parturient' ? OB_CARD_ROWS : p.admitType === 'newborn' ? NB_CARD_ROWS : null;
+  if (!rows) return '';
+  // when the baby is linked to a mother on the census, linkRowHTML already prints her (with her
+  // bed) — don't repeat the typed-in name underneath it
+  const linked = p.admitType === 'newborn' && p.motherId && patients[p.motherId];
+  return rows.filter(([k]) => !(linked && k === 'nbMotherName')).map(([k,lbl]) => {
+    const val = derivedField(p, k);
+    return val ? `<div class="card-field"><span class="field-label">${lbl}</span><span class="field-value">${esc(val)}</span></div>` : '';
+  }).join('');
+}
+// mother ⇄ baby cross-reference line
+function linkRowHTML(p) {
+  if (p.admitType === 'newborn' && p.motherId && patients[p.motherId]) {
+    const m = patients[p.motherId];
+    return `<div class="card-field"><span class="field-label">Mother</span><span class="field-value">🔗 ${esc(m.name||'')}${m.room?' · '+esc(m.room):''}</span></div>`;
+  }
+  if (p.admitType === 'parturient') {
+    const babies = Object.entries(patients).filter(([,b]) => b.motherId === p.id).map(([,b]) => b.name);
+    if (babies.length) return `<div class="card-field"><span class="field-label">Newborn</span><span class="field-value">👶 ${esc(babies.join(', '))}</span></div>`;
+  }
+  return '';
+}
+
 /* ===== HISTORY & PE VIEW ===== */
-const HISTORY_FIELDS = [['admDx','Admitting Diagnosis'],['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['occupation','Occupation'],['familyHx','Family History'],['ros','ROS'],['pe','PE']];
+const HISTORY_FIELDS =[['admDx','Admitting Diagnosis'],['cc','Chief Complaint'],['hpi','HPI'],['pmh','PMH'],['psh','Personal & Social History (PSH)'],['occupation','Occupation'],['familyHx','Family History'],['ros','ROS'],['pe','PE']];
 // snapshot of the orders entered at admission time (diet/ivf/etc continue to change via daily rounds,
 // but these adm* copies are frozen on day 1 so the original Doctor's Order can still be reviewed/printed)
 const ADMIT_ORDER_FIELDS = [['admDiet','Diet',false],['admIvf','IVF',false],['admLabsOrdered','Labs Ordered / Pending',false],['admMeds','Medications / Orders',true],['admPlan','Plan',true],['admRemarks','Remarks / Notes',true]];
@@ -2196,13 +2704,19 @@ async function saveRoundsNotes() {
   const moved = {};
   if (newWard && newWard !== p.ward) moved.ward = newWard;
   if (newRoom !== (p.room||'')) moved.room = newRoom;
+  // Priority and MGH are the same kind of thing — a live flag on the patient, not a note to be
+  // charted later — so they also save immediately.
+  const newPriority = document.getElementById('r-priority').checked;
+  const newMgh = document.getElementById('r-mgh').checked;
+  if (newPriority !== !!p.priority) moved.priority = newPriority;
+  if (newMgh !== !!p.mgh) moved.mgh = newMgh;
   if (Object.keys(moved).length) await db.ref('patients/'+id).update(moved);
   closeRoundsModal();
   const hasContent = pending.ss || pending.dx || pending.labsOrdered || pending.labsPending.length || pending.labs || pending.orders || pending.plan || pending.remarks;
   if (!hasContent) {
     // nothing entered — clear any pending state back to neutral
     await db.ref('patients/'+id+'/round').remove();
-    showToast(Object.keys(moved).length ? '✓ Ward / bed updated' : 'No notes entered — patient cleared');
+    showToast(Object.keys(moved).length ? '✓ Patient details updated' : 'No notes entered — patient cleared');
     return;
   }
   const round = { status:'pending', pending, visitedAt: Date.now() };
@@ -2401,11 +2915,33 @@ function setFilter(f, el) {
   activateTab(el.closest('.filter-tabs'), f);
   renderPatients();
 }
+// Every "only show X" toolbar button behaves the same: flip a flag, swap the button to the
+// filled style so it's obvious a filter is on, re-render.
+function paintToggle(btnId, on) {
+  const b = document.getElementById(btnId);
+  if (!b) return;
+  b.classList.toggle('btn-primary', on);
+  b.classList.toggle('btn-outline', !on);
+}
 function togglePriorityOnly() {
   priorityOnly = !priorityOnly;
-  document.getElementById('priority-toggle').classList.toggle('btn-primary', priorityOnly);
-  document.getElementById('priority-toggle').classList.toggle('btn-outline', !priorityOnly);
+  paintToggle('priority-toggle', priorityOnly);
   renderPatients();
+}
+function toggleMghOnly() {
+  mghOnly = !mghOnly;
+  paintToggle('mgh-toggle', mghOnly);
+  renderPatients();
+}
+function toggleRoundsPriorityOnly() {
+  roundsPriorityOnly = !roundsPriorityOnly;
+  paintToggle('rounds-priority-toggle', roundsPriorityOnly);
+  renderRounds();
+}
+function toggleRoundsMghOnly() {
+  roundsMghOnly = !roundsMghOnly;
+  paintToggle('rounds-mgh-toggle', roundsMghOnly);
+  renderRounds();
 }
 
 /* ===== SHIFT WINDOW (24h, 9am–9am) — used for "Today's Admissions" ===== */
@@ -2428,8 +2964,7 @@ function isTodaysShiftAdmission(p) {
 }
 function toggleTodayOnly() {
   todayOnly = !todayOnly;
-  document.getElementById('today-toggle').classList.toggle('btn-primary', todayOnly);
-  document.getElementById('today-toggle').classList.toggle('btn-outline', !todayOnly);
+  paintToggle('today-toggle', todayOnly);
   renderPatients();
 }
 
@@ -2476,13 +3011,15 @@ function renderPatients() {
     const mw = currentFilter==='all' || p.ward===currentFilter;
     const ms = !search || [p.name,p.room,p.dx,p.ss,p.labsOrdered,p.labs,p.meds,p.remarks,p.plan].some(f=>(f||'').toLowerCase().includes(search));
     const mp = !priorityOnly || p.priority;
+    const mg = !mghOnly || p.mgh;
     const mt = !todayOnly || isTodaysShiftAdmission(p);
     const md = doctorFilter==='all' || (p.physician||'').trim() === doctorFilter;
-    return mw && ms && mp && mt && md;
+    return mw && ms && mp && mg && mt && md;
   }).sort((a,b) => {
     const wa=wo[a.ward]??99, wb=wo[b.ward]??99;
     if (wa!==wb) return wa-wb;
     if (!!b.priority !== !!a.priority) return b.priority ? 1 : -1;  // priority first
+    if (!!b.mgh !== !!a.mgh) return b.mgh ? 1 : -1;                 // then may-go-home
     return (a.room||'').localeCompare(b.room||'');
   });
 
@@ -2512,18 +3049,22 @@ function renderPatients() {
       const c = wardMap[p.ward]?.cls || 'hallway';
       const d = days(p.date);
       const noHistory = !HISTORY_FIELDS.some(([k]) => (p[k]||'').trim());
-      html += `<div class="patient-card${p.priority?' priority':''}" onclick="openEditModal('${p.id}')">
+      // priority's red border wins over MGH's green when a patient somehow has both
+      const cardCls = p.priority ? ' priority' : p.mgh ? ' mgh' : '';
+      html += `<div class="patient-card${cardCls}" onclick="openEditModal('${p.id}')">
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
             <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
-            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}${noHistory?'<span class="no-history-pill">⚠ NO HISTORY</span>':''}
+            ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}${p.mgh?'<span class="mgh-pill">🏠 MGH</span>':''}${p.admitType==='parturient'?'<span class="ob-pill">🤰 PARTURIENT</span>':''}${p.admitType==='newborn'?'<span class="nb-pill">👶 NEWBORN</span>':''}${noHistory?'<span class="no-history-pill">⚠ NO HISTORY</span>':''}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
         ${p.physician?`<div class="card-field"><span class="field-label">MD</span><span class="field-value">${esc(p.physician)}</span></div>`:''}
+        ${linkRowHTML(p)}
+        ${formatCardRowsHTML(p)}
         ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
-        ${p.dx?`<div class="card-field"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
+        ${p.dx?`<div class="card-field dx-current"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
         ${p.labsOrdered?`<div class="card-field"><span class="field-label">Labs Ord</span><span class="field-value">${esc(p.labsOrdered)}</span></div>`:''}
         ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
         ${p.meds?`<div class="card-field"><span class="field-label">Meds/Ord</span><span class="field-value">${esc(expandMeds(p.meds))}</span></div>`:''}
@@ -2531,6 +3072,7 @@ function renderPatients() {
         ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
+          ${p.admitType==='parturient'?`<button class="btn btn-outline btn-sm" style="color:var(--pedia-c);border-color:#0a3050" onclick="openAdmitNewbornModal('${p.id}')" title="Admit this mother's newborn — the form comes pre-filled from her record">👶 Admit Newborn</button>`:''}
           <button class="btn btn-outline btn-sm${noHistory?' history-btn-warn':''}" onclick="openHistoryModal('${p.id}')">📜 History${noHistory?' ⚠':''}</button>
           <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
           <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}')">📄 Med Cert</button>
@@ -2555,10 +3097,17 @@ function updateStats(all) {
 }
 
 /* ===== MODALS ===== */
+// The modal body keeps whatever scroll position the last patient's form was left at, so a fresh
+// Admit/Edit opened halfway down the chart. Always start at the top.
+function scrollModalTop(modalId) {
+  const body = document.querySelector('#' + modalId + ' .modal-body');
+  if (body) body.scrollTop = 0;
+}
 function openAdmitModal() {
   document.getElementById('modal-title').textContent = 'Admit New Patient';
   document.getElementById('edit-id').value = '';
   clearForm();
+  setAdmitType('general');
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('f-physician').value = currentDoctorName;
   document.getElementById('history-pe-section').style.display = '';
@@ -2575,6 +3124,7 @@ function openAdmitModal() {
   initLabsPicker('f', []);
   resetDxPicker('f-admDx');
   resetDxPicker('f-dx');
+  scrollModalTop('patient-modal');
 }
 
 function openEditModal(id) {
@@ -2582,11 +3132,18 @@ function openEditModal(id) {
   document.getElementById('modal-title').textContent = 'Edit — ' + (p.name||'');
   document.getElementById('edit-id').value = id;
   ['name','age','sex','date','ward','room','physician','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks',
-   'admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight'].forEach(f => {
+   'admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight',
+   ...OB_FIELDS, ...NB_FIELDS].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value = p[f]||'';
   });
   document.getElementById('f-age-unit').value = p.ageUnit || 'yrs';
   document.getElementById('f-priority').checked = !!p.priority;
+  document.getElementById('f-mgh').checked = !!p.mgh;
+  document.getElementById('f-motherId').value = p.motherId || '';
+  setAdmitType(p.admitType || 'general');
+  const mLink = document.getElementById('nb-mother-link');
+  const mom = p.motherId && patients[p.motherId];
+  mLink.textContent = mom ? '🔗 Linked to ' + (mom.name||'') + ' — ' + (mom.room || wardMap[mom.ward]?.label || mom.ward || '') : '';
   // History & PE stays editable after day 1 — it's often written up after the fact, and a
   // mistyped HPI or admitting PE shouldn't be frozen into the record
   document.getElementById('history-pe-section').style.display = '';
@@ -2602,14 +3159,21 @@ function openEditModal(id) {
   initLabsPicker('f', p.labsPending || parseLabsOrderedFallback(p.labsOrdered));
   resetDxPicker('f-admDx');
   resetDxPicker('f-dx');
+  scrollModalTop('patient-modal');
 }
 
 function clearForm() {
-  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks'].forEach(f => {
+  ['name','age','sex','date','ward','room','physician','admDx','cc','hpi','pmh','psh','occupation','familyHx','ros','pe','height','weight','diet','ivf','ss','dx','labsOrdered','labs','meds','plan','remarks',
+   ...OB_FIELDS, ...NB_FIELDS].forEach(f => {
     const el = document.getElementById('f-'+f); if(el) el.value='';
   });
   document.getElementById('f-age-unit').value = 'yrs';
   document.getElementById('f-priority').checked = false;
+  document.getElementById('f-mgh').checked = false;
+  sexAutoSet = false;
+  document.getElementById('f-motherId').value = '';
+  document.getElementById('nb-mother-link').textContent = '';
+  lastAutoAdmDx = '';
 }
 
 function toggleLabsResults() {
@@ -2647,8 +3211,18 @@ async function savePatient() {
     plan: document.getElementById('f-plan').value.trim(),
     remarks: document.getElementById('f-remarks').value.trim(),
     priority: document.getElementById('f-priority').checked,
+    mgh: document.getElementById('f-mgh').checked,
+    admitType: currentAdmitType,
     updatedAt: Date.now()
   };
+  // Obstetric / newborn format fields — only the relevant set is stored, so switching a record's
+  // type doesn't leave the other format's stale values hanging on it.
+  if (currentAdmitType === 'parturient') OB_FIELDS.forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
+  if (currentAdmitType === 'newborn') {
+    NB_FIELDS.forEach(f => { data[f] = document.getElementById('f-'+f).value.trim(); });
+    const mid = document.getElementById('f-motherId').value;
+    if (mid) data.motherId = mid;
+  }
   // Preserve any pending rounds notes so editing outside rounds mode doesn't wipe them
   if (existingId && patients[existingId]?.round) data.round = patients[existingId].round;
   // History & PE and Height/Weight are entered at admission but stay editable afterwards — the
@@ -2684,12 +3258,9 @@ function resetCensusFilters() {
   currentFilter = 'all';
   const tabs = document.querySelector('#census-view .filter-tabs');
   if (tabs) activateTab(tabs, 'all');
-  priorityOnly = false;
-  document.getElementById('priority-toggle').classList.remove('btn-primary');
-  document.getElementById('priority-toggle').classList.add('btn-outline');
-  todayOnly = false;
-  document.getElementById('today-toggle').classList.remove('btn-primary');
-  document.getElementById('today-toggle').classList.add('btn-outline');
+  priorityOnly = false; paintToggle('priority-toggle', false);
+  mghOnly = false;      paintToggle('mgh-toggle', false);
+  todayOnly = false;    paintToggle('today-toggle', false);
   doctorFilter = 'all';
   const docSel = document.getElementById('doctor-filter');
   if (docSel) docSel.value = 'all';
@@ -2806,7 +3377,7 @@ function buildPreviewHTML(hospital) {
       </tr></thead><tbody>`;
     wp.forEach(p => {
       html += `<tr>
-        <td>${p.priority?'<span style="color:#f87171;font-weight:800">⚡ </span>':''}<strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}${p.priority?' · PRIORITY':''}</span></td>
+        <td>${p.priority?'<span style="color:#f87171;font-weight:800">⚡ </span>':''}${p.mgh?'<span style="color:#34d399;font-weight:800">🏠 </span>':''}<strong style="color:var(--text)">${esc(p.name||'—')}</strong><br><span style="font-size:11px;color:var(--text3)">Day ${days(p.date)}${p.priority?' · PRIORITY':''}${p.mgh?' · MGH':''}${p.admitType==='parturient'?' · PARTURIENT':''}${p.admitType==='newborn'?' · NEWBORN':''}</span></td>
         <td>${esc(p.room||'—')}</td>
         <td>${p.age||'—'}${ageUnitLabel(p,'compact')}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
@@ -2856,7 +3427,7 @@ function doPrint() {
     </tr></thead><tbody>`;
     wp.forEach(p => {
       body += `<tr>
-        <td>${p.priority?'★ ':''}<strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})${p.priority?' — PRIORITY':''}</td>
+        <td>${p.priority?'★ ':''}<strong>${esc(p.name||'—')}</strong> (Day ${days(p.date)})${p.priority?' — PRIORITY':''}${p.mgh?' — MGH':''}${p.admitType==='parturient'?' — PARTURIENT':''}${p.admitType==='newborn'?' — NEWBORN':''}</td>
         <td>${esc(p.room||'—')}</td>
         <td>${p.age||'—'}${ageUnitLabel(p,'compact')}/${p.sex?p.sex[0]:'—'}</td>
         <td>${fmtDate(p.date)}</td>
