@@ -835,30 +835,72 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<!-- Archive Dates Modal -->
-<div class="modal-overlay" id="archdates-modal" style="z-index:1001">
+<!-- Archive Edit Modal -->
+<div class="modal-overlay" id="archedit-modal" style="z-index:1001">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
-      <div class="modal-title" id="archdates-title">Adjust Dates</div>
-      <button class="modal-close" onclick="closeArchiveDates()">×</button>
+      <div class="modal-title">Edit Patient Details</div>
+      <button class="modal-close" onclick="closeArchiveEdit()">×</button>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="archdates-id">
+      <input type="hidden" id="archedit-id">
       <div class="form-grid">
         <div class="form-group full">
-          <label>Date Admitted</label>
-          <input type="date" id="ad-admit">
+          <label>Patient Name</label>
+          <input type="text" id="ae-name" placeholder="Last name, First name">
         </div>
         <div class="form-group full">
+          <label>Age</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="ae-age" min="0" max="150" style="flex:1">
+            <select id="ae-age-unit" style="flex:0 0 auto">
+              <option value="yrs">yrs</option>
+              <option value="mo">mos</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Sex</label>
+          <select id="ae-sex"><option value="">Select...</option><option>Male</option><option>Female</option></select>
+        </div>
+        <div class="form-group">
+          <label>Ward</label>
+          <select id="ae-ward"></select>
+        </div>
+        <div class="form-group">
+          <label>Date Admitted</label>
+          <input type="date" id="ae-admit">
+        </div>
+        <div class="form-group">
           <label>Date Discharged</label>
-          <input type="date" id="ad-discharge">
+          <input type="date" id="ae-discharge">
+        </div>
+        <div class="form-group full" style="font-size:12px;color:var(--text3);margin-top:-6px" id="ae-los"></div>
+        <div class="form-group full">
+          <label>Bed / Room No.</label>
+          <input type="text" id="ae-room">
+        </div>
+        <div class="form-group full">
+          <label>Admitting Physician</label>
+          <input type="text" id="ae-physician" list="physician-datalist" autocomplete="off">
+        </div>
+        <div class="form-group full">
+          <label>Diagnosis</label>
+          <textarea id="ae-dx" rows="2"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Disposition</label>
+          <input type="text" id="ae-dispo">
+        </div>
+        <div class="form-group full">
+          <label>Notes / Remarks</label>
+          <textarea id="ae-remarks" rows="2"></textarea>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-top:12px" id="archdates-los"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeArchiveDates()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveArchiveDates()">Save Dates</button>
+      <button class="btn btn-outline" onclick="closeArchiveEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveArchiveEdit()">Save</button>
     </div>
   </div>
 </div>
@@ -1264,6 +1306,17 @@ const STAFF_PHYSICIANS = Object.values(DOCTOR_MAP).sort();
   const dl = document.getElementById('physician-datalist');
   if (dl) dl.innerHTML = STAFF_PHYSICIANS.map(n => `<option value="${esc(n)}">`).join('');
 })();
+// A datalist only shows options matching the text already in the box, so a pre-filled physician hides
+// every other doctor. On focus, blank the box (remembering the value) so the full roster shows; if the
+// user picks/types nothing, the old value is put back on blur.
+function enablePhysicianPicker(id) {
+  const el = document.getElementById(id); if (!el) return;
+  let prev = '';
+  el.addEventListener('focus', () => { prev = el.value; if (prev) el.value = ''; });
+  el.addEventListener('blur', () => { if (!el.value.trim()) el.value = prev; });
+}
+enablePhysicianPicker('f-physician');
+enablePhysicianPicker('ae-physician');
 let currentDoctorName = '';
 let currentUserEmail = '';
 // Temporarily opened up to all doctors while the dictionary is being built out.
@@ -2003,7 +2056,7 @@ function renderDischarged() {
       <div class="card-field"><span class="field-label">Out</span><span class="field-value">${when}${los}</span></div>
       <div class="card-actions">
         <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
-        <button class="btn btn-outline btn-sm" onclick="openArchiveDates('${p.id}')">🗓️ Dates</button>
+        <button class="btn btn-outline btn-sm" onclick="openArchiveEdit('${p.id}')">✏️ Edit</button>
         <button class="btn btn-outline btn-sm" onclick="openAbstractPrompt('${p.id}')">🖨️ Abstract</button>
         <button class="btn btn-outline btn-sm" onclick="openMedCertPrompt('${p.id}',true)">📄 Med Cert</button>
         <button class="btn btn-green btn-sm" onclick="restorePatient('${p.id}')">↩️ Re-admit</button>
@@ -2025,44 +2078,74 @@ async function restorePatient(id) {
   showToast('↩️ Patient re-admitted');
 }
 
-/* Admission and discharge dates can drift from what actually happened (late entry, a patient
-   sent home the night before). Both are editable straight from the Archive card. */
-function openArchiveDates(id) {
+/* Fix a misspelled name, wrong age, dates, etc. on an archived patient. Admission and discharge
+   dates can drift from what actually happened (late entry, a patient sent home the night before). */
+function openArchiveEdit(id) {
   const { p } = findPatient(id); if (!p) return;
-  document.getElementById('archdates-id').value = id;
-  document.getElementById('archdates-title').textContent = 'Adjust Dates — ' + (p.name||'');
-  document.getElementById('ad-admit').value = p.date || '';
-  document.getElementById('ad-discharge').value = p.dischargeDate || (p.dischargedAt ? localDateStr(p.dischargedAt) : '');
+  document.getElementById('archedit-id').value = id;
+  document.getElementById('ae-name').value = p.name || '';
+  document.getElementById('ae-age').value = p.age || '';
+  document.getElementById('ae-age-unit').value = p.ageUnit || 'yrs';
+  document.getElementById('ae-sex').value = p.sex || '';
+  const ws = document.getElementById('ae-ward');
+  ws.innerHTML = '<option value="">Select ward...</option>' + WARDS.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
+  ws.value = p.ward || '';
+  document.getElementById('ae-room').value = p.room || '';
+  document.getElementById('ae-physician').value = p.physician || '';
+  document.getElementById('ae-dx').value = p.dx || '';
+  document.getElementById('ae-dispo').value = p.disposition || '';
+  document.getElementById('ae-remarks').value = p.remarks || '';
+  document.getElementById('ae-admit').value = p.date || '';
+  document.getElementById('ae-discharge').value = p.dischargeDate || (p.dischargedAt ? localDateStr(p.dischargedAt) : '');
+  document.getElementById('ae-admit').oninput = updateArchiveLos;
+  document.getElementById('ae-discharge').oninput = updateArchiveLos;
   updateArchiveLos();
-  document.getElementById('ad-admit').oninput = updateArchiveLos;
-  document.getElementById('ad-discharge').oninput = updateArchiveLos;
-  document.getElementById('archdates-modal').classList.add('open');
+  document.getElementById('archedit-modal').classList.add('open');
 }
 function updateArchiveLos() {
-  const a = document.getElementById('ad-admit').value, d = document.getElementById('ad-discharge').value;
-  const el = document.getElementById('archdates-los');
+  const a = document.getElementById('ae-admit').value, d = document.getElementById('ae-discharge').value;
+  const el = document.getElementById('ae-los');
   if (!a || !d) { el.textContent = ''; return; }
   const n = days(a, new Date(d + 'T12:00:00').getTime());
   el.textContent = n < 0 ? '⚠️ Discharge date is before the admission date.' : `Length of stay: ${n} day${n===1?'':'s'}.`;
 }
-function closeArchiveDates() { document.getElementById('archdates-modal').classList.remove('open'); }
-async function saveArchiveDates() {
-  const id = document.getElementById('archdates-id').value;
+function closeArchiveEdit() { document.getElementById('archedit-modal').classList.remove('open'); }
+async function saveArchiveEdit() {
+  const id = document.getElementById('archedit-id').value;
   const { p, ref } = findPatient(id); if (!ref) return;
-  const admit = document.getElementById('ad-admit').value;
-  const disDate = document.getElementById('ad-discharge').value;
+  const name = document.getElementById('ae-name').value.trim();
+  if (!name) { alert('Patient name is required.'); return; }
+  const admit = document.getElementById('ae-admit').value;
+  const disDate = document.getElementById('ae-discharge').value;
   if (!admit) { alert('Date Admitted is required.'); return; }
   if (disDate && new Date(disDate) < new Date(admit)) {
     if (!confirm('The discharge date is before the admission date. Save anyway?')) return;
   }
-  const updates = { date: admit };
+  const updates = {
+    name,
+    age: document.getElementById('ae-age').value,
+    ageUnit: document.getElementById('ae-age-unit').value,
+    sex: document.getElementById('ae-sex').value,
+    ward: document.getElementById('ae-ward').value,
+    room: document.getElementById('ae-room').value.trim(),
+    physician: document.getElementById('ae-physician').value.trim(),
+    dx: document.getElementById('ae-dx').value.trim(),
+    disposition: document.getElementById('ae-dispo').value.trim(),
+    remarks: document.getElementById('ae-remarks').value.trim(),
+    date: admit
+  };
   if (disDate) {
     updates.dischargeDate = disDate;
     updates.dischargedAt = dateToTs(disDate, p.dischargedAt);
   }
   await db.ref(ref).update(updates);
-  closeArchiveDates();
-  showToast('✓ Dates updated');
+  if (archiveSearchResults) {
+    const hit = archiveSearchResults.find(x => x.id === id);
+    if (hit) Object.assign(hit, updates);
+    renderDischarged();
+  }
+  closeArchiveEdit();
+  showToast('✓ Patient updated');
 }
 
 async function deleteDischarged(id, name) {
