@@ -178,6 +178,8 @@ if ('serviceWorker' in navigator) {
   .round-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:10px;margin-top:5px}
   .round-pill.pending{color:#fbbf24;background:#2a2000;border:1px solid #3a2a00}
   .round-pill.charted{color:#34d399;background:#052e1c;border:1px solid #0d5c38}
+  /* what the last charting added — stays lit until the next New Round */
+  .fresh-chart{background:rgba(250,204,21,.16);color:#fde68a;border-left:2px solid #facc15;padding:0 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
   .pending-block{margin-top:10px;padding:10px 12px;background:#2a2000;border:1px solid #3a2a00;border-radius:8px}
   .pending-block-title{font-size:10px;font-weight:800;letter-spacing:.4px;color:#fbbf24;text-transform:uppercase;margin-bottom:6px}
   .pending-block .card-field{color:#e8d9b0}
@@ -234,6 +236,19 @@ if ('serviceWorker' in navigator) {
   .label-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .label-row label{margin:0}
   .label-row .btn-sm{padding:2px 8px;font-size:11px}
+  /* antibiotic / tracked-med day chips */
+  .abx-chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;margin:0 4px 3px 0;background:#0b2a40;color:#7cc4f5;border:1px solid #154a6e;font-family:'DM Mono',monospace;white-space:nowrap}
+  .abx-chip.last{background:#2a2000;color:#fbbf24;border-color:#5a4515}
+  .abx-chip.over{background:var(--danger-bg);color:var(--danger);border-color:#5a2222}
+  .abx-chip.done{background:transparent;color:var(--text3);border-color:var(--border);font-weight:500}
+  .abx-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface2)}
+  .abx-row .abx-chip{margin:0}
+  .abx-meta{font-size:12px;color:var(--text2);flex:1;min-width:120px}
+  .abx-add{display:grid;grid-template-columns:1.2fr 1.6fr 1.1fr .6fr auto;gap:6px}
+  @media(max-width:560px){.abx-add{grid-template-columns:1fr 1fr}}
+  .abx-suggest:empty{display:none}
+  .abx-suggest{margin-bottom:6px}
+  .abx-suggest .btn{margin:0 6px 6px 0;font-size:12px;white-space:normal;text-align:left}
   .meds-preview{font-size:12px;color:var(--text2);font-style:italic;padding:2px 2px 0}
   .form-group.full{grid-column:1/-1}
   #history-pe-section{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -799,6 +814,18 @@ if ('serviceWorker' in navigator) {
           <div id="f-meds-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
+          <label>💊 Antibiotics / Tracked Meds</label>
+          <div id="f-abx-suggest" class="abx-suggest"></div>
+          <div id="f-abx-list"></div>
+          <div class="abx-add">
+            <input type="text" id="f-abx-name" list="abx-names" placeholder="Drug">
+            <input type="text" id="f-abx-dose" placeholder="Dose / route / freq">
+            <input type="date" id="f-abx-start" title="Start date (Day 1) — blank = admission date">
+            <input type="number" id="f-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('f')">＋ Add</button>
+          </div>
+        </div>
+        <div class="form-group full">
           <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
           <textarea id="f-plan" placeholder="Management plan, referrals, procedures..." oninput="updateMedsPreview('f-plan','f-plan-preview')"></textarea>
           <div id="f-plan-preview" class="meds-preview" style="display:none"></div>
@@ -1177,13 +1204,6 @@ if ('serviceWorker' in navigator) {
             <span class="switch-label">⚡ Priority / critical</span>
           </label>
         </div>
-        <div class="form-group full">
-          <label class="switch switch-green">
-            <input type="checkbox" id="r-mgh">
-            <span class="track"></span>
-            <span class="switch-label">🏠 MGH — may go home</span>
-          </label>
-        </div>
       </div>
       <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Ward and bed save straight to the record. Add today's new findings. They stay as <strong style="color:#fbbf24">pending</strong> until you mark the patient charted — then they merge into the record with a date stamp.</div>
       <div class="form-grid">
@@ -1214,9 +1234,28 @@ if ('serviceWorker' in navigator) {
           <div id="r-orders-preview" class="meds-preview" style="display:none"></div>
         </div>
         <div class="form-group full">
+          <label>💊 Antibiotics / Tracked Meds</label>
+          <div id="r-abx-suggest" class="abx-suggest"></div>
+          <div id="r-abx-list"></div>
+          <div class="abx-add">
+            <input type="text" id="r-abx-name" list="abx-names" placeholder="Drug">
+            <input type="text" id="r-abx-dose" placeholder="Dose / route / freq">
+            <input type="date" id="r-abx-start" title="Start date (Day 1) — blank = today">
+            <input type="number" id="r-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('r')">＋ Add</button>
+          </div>
+        </div>
+        <div class="form-group full">
           <label>New Plan</label>
           <textarea id="r-plan" placeholder="Updated management plan, referrals, procedures..." oninput="updateMedsPreview('r-plan','r-plan-preview')"></textarea>
           <div id="r-plan-preview" class="meds-preview" style="display:none"></div>
+        </div>
+        <div class="form-group full">
+          <label class="switch switch-green">
+            <input type="checkbox" id="r-mgh">
+            <span class="track"></span>
+            <span class="switch-label">🏠 MGH — may go home</span>
+          </label>
         </div>
         <div class="form-group full">
           <label>New Remarks / Notes</label>
@@ -1232,6 +1271,8 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
+
+<datalist id="abx-names"></datalist>
 
 <!-- Start New Round Modal -->
 <div class="modal-overlay" id="newround-modal">
@@ -1387,6 +1428,7 @@ function expandMeds(text) {
 const MEDS_EXPAND_FIELDS = new Set(['meds','orders','plan','remarks']);
 function expandIfMeds(k, v) { return MEDS_EXPAND_FIELDS.has(k) ? expandMeds(v) : v; }
 function updateMedsPreview(srcId, outId) {
+  if (['f-meds','f-plan','r-orders','r-plan'].includes(srcId)) renderAbxSuggest(srcId[0]);
   const val = document.getElementById(srcId).value;
   const out = document.getElementById(outId);
   if (!val.trim()) { out.style.display = 'none'; return; }
@@ -2214,16 +2256,17 @@ function renderRounds() {
         ? `<div class="pending-block"><div class="pending-block-title" style="display:flex;align-items:center;justify-content:space-between">🆕 Pending — not yet charted<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px" onclick="copySoap('${p.id}')">📋 Copy SOAP</button></div>${pendRows}</div>` : '';
       // full chart shown read-only, like bringing the chart to the bedside
       const chart = [['ss','S&S'],['dx','Dx'],['labsOrdered','Labs Ord'],['labs','Labs'],['meds','Meds/Ord'],['plan','Plan'],['remarks','Note']]
-        .map(([k,lbl]) => p[k] ? `<div class="card-field${k==='dx'?' dx-current':''}"><span class="field-label">${lbl}</span><span class="field-value">${esc(expandIfMeds(k,p[k]))}</span></div>` : '').join('');
+        .map(([k,lbl]) => cardFieldHTML(p, k, lbl, k==='dx'?' dx-current':'') + (k === 'meds' ? abxRowHTML(p) : '')).join('');
       html += `<div class="patient-card${cardCls}" style="cursor:default">
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
-            <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
+            <div class="patient-meta">${demoLine(p)}${demoLine(p)?' · ':''}${fmtDate(p.date)} · Day ${days(p.date)}</div>
             ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span> ':''}${p.mgh?'<span class="mgh-pill">🏠 MGH</span>':''}${p.admitType==='parturient'?'<span class="ob-pill">🤰 PARTURIENT</span>':''}${p.admitType==='newborn'?'<span class="nb-pill">👶 NEWBORN</span>':''}${pill}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
         </div>
+        ${p.physician?`<div class="card-field"><span class="field-label">MD</span><span class="field-value">${esc(p.physician)}</span></div>`:''}
         ${linkRowHTML(p)}
         ${formatCardRowsHTML(p)}
         ${chart}
@@ -2267,6 +2310,7 @@ function openRoundsModal(id) {
   updateMedsPreview('r-plan','r-plan-preview');
   updateMedsPreview('r-remarks','r-remarks-preview');
   initLabsPicker('r', pend.labsPending || p.labsPending || parseLabsOrderedFallback(pend.labsOrdered || p.labsOrdered));
+  initAbxEditor('r', p.abx);
   resetDxPicker('r-dx');
   scrollModalTop('rounds-modal');
 }
@@ -2793,6 +2837,8 @@ async function saveRoundsNotes() {
   const newMgh = document.getElementById('r-mgh').checked;
   if (newPriority !== !!p.priority) moved.priority = newPriority;
   if (newMgh !== !!p.mgh) moved.mgh = newMgh;
+  // the med tracker is live too — a started/stopped course shows on the card right away
+  if (JSON.stringify(currentAbx) !== JSON.stringify(p.abx || {})) moved.abx = Object.keys(currentAbx).length ? currentAbx : null;
   if (Object.keys(moved).length) await db.ref('patients/'+id).update(moved);
   closeRoundsModal();
   const hasContent = pending.ss || pending.dx || pending.labsOrdered || pending.labsPending.length || pending.labs || pending.orders || pending.plan || pending.remarks;
@@ -2804,6 +2850,7 @@ async function saveRoundsNotes() {
   }
   const round = { status:'pending', pending, visitedAt: Date.now() };
   if (p.round?.chartedAt) round.chartedAt = p.round.chartedAt;
+  if (p.round?.fresh) round.fresh = p.round.fresh;   // keep this round's highlights through a re-chart
   await db.ref('patients/'+id+'/round').set(round);
   showToast('Notes saved — chart in IHOMIS, then mark Charted');
 }
@@ -2811,17 +2858,28 @@ async function saveRoundsNotes() {
 // merge one patient's pending notes into their record (returns the update object, or null if nothing pending)
 function chartUpdate(p) {
   const pend = p.round?.pending; if (!pend) return null;
-  return {
-    ss: appendStamped(p.ss, pend.ss),
-    dx: pend.dx ? pend.dx.trim() : (p.dx || ''),   // working dx is replaced in place, not appended/dated
-    labsOrdered: pend.labsOrdered ? pend.labsOrdered.trim() : (p.labsOrdered || ''),   // same — current snapshot, not a log
-    labsPending: pend.labsPending || p.labsPending || [],
-    labs: appendStamped(p.labs, pend.labs),
-    meds: appendStamped(p.meds, pend.orders),     // Orders merge into Meds/Orders
-    plan: appendStamped(p.plan, pend.plan),
-    remarks: appendStamped(p.remarks, pend.remarks),
-    round: { status:'charted', chartedAt: Date.now() }
-  };
+  // round.fresh remembers what this charting added, so the census cards can highlight it:
+  // the appended tail for log fields, true for the replaced-in-place dx / labs ordered. A second
+  // charting in the same round extends the earlier highlight rather than replacing it.
+  const prev = p.round?.fresh || {}, fresh = {};
+  const upd = { labsPending: pend.labsPending || p.labsPending || [] };
+  [['ss','ss'],['labs','labs'],['meds','orders'],['plan','plan'],['remarks','remarks']].forEach(([k, pk]) => {
+    const before = (p[k]||'').trim();
+    upd[k] = appendStamped(before, pend[pk]);
+    if (upd[k] !== before) {
+      const line = before ? upd[k].slice(before.length + 1) : upd[k];
+      fresh[k] = (typeof prev[k] === 'string' && before.endsWith(prev[k])) ? prev[k] + '\n' + line : line;
+    } else if (prev[k]) fresh[k] = prev[k];
+  });
+  // working dx / labs ordered are replaced in place, not appended/dated — current snapshots, not logs
+  ['dx','labsOrdered'].forEach(k => {
+    const nv = (pend[k]||'').trim();
+    upd[k] = nv || (p[k] || '');
+    if (nv && nv !== (p[k]||'').trim()) fresh[k] = true;
+    else if (prev[k]) fresh[k] = prev[k];
+  });
+  upd.round = { status:'charted', chartedAt: Date.now(), fresh };
+  return upd;
 }
 
 async function markCharted(id) {
@@ -2981,11 +3039,194 @@ function clearSearch(id, renderFn) {
 function stamp() {
   return new Date().toLocaleString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 }
-function appendStamped(existing, note) {
+function appendStamped(existing, note, when) {
   note = (note||'').trim();
   if (!note) return existing || '';
-  const line = '— ' + stamp() + ': ' + note;
+  const line = '— ' + (when || stamp()) + ': ' + note;
   return existing && existing.trim() ? existing.trim() + '\n' + line : line;
+}
+// "Nov 3" — the stamp for admission-day entries whose time isn't known (backdated admits, and
+// patients admitted before admission orders were dated)
+function dayStamp(d) {
+  try { return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric'}); } catch { return d; }
+}
+
+/* ===== ANTIBIOTIC / MED DAY TRACKER =====
+   p.abx = { <id>: { name, dose, start:'YYYY-MM-DD', days:<planned count or ''>, stop?:'YYYY-MM-DD' } }
+   The start day is Day 1. Forms edit a working copy (currentAbx): the admit/edit form saves it with
+   the record, the rounds modal saves it straight away like ward/MGH — it's a live tracker, not a note.
+   Antibiotics named in the orders/plan text are offered as one-tap Track / Stop suggestions. */
+const ABX_LIST = [
+  ['Ceftriaxone',['ceftriaxone','ceftri','rocephin']], ['Cefuroxime',['cefuroxime','cefur','zinacef','zinnat']],
+  ['Cefazolin',['cefazolin']], ['Cefalexin',['cefalexin','cephalexin']], ['Cefixime',['cefixime']],
+  ['Ceftazidime',['ceftazidime','ceftaz']], ['Cefepime',['cefepime']], ['Cefoxitin',['cefoxitin']], ['Cefotaxime',['cefotaxime']],
+  ['Ampicillin',['ampicillin','ampi']], ['Ampicillin-Sulbactam',['ampicillin-sulbactam','ampisulbactam','unasyn']],
+  ['Amoxicillin',['amoxicillin','amox']], ['Co-Amoxiclav',['co-amoxiclav','coamoxiclav','coamox','augmentin']],
+  ['Penicillin G',['penicillin','pen-g','peng']], ['Oxacillin',['oxacillin']], ['Cloxacillin',['cloxacillin']],
+  ['Piperacillin-Tazobactam',['piperacillin-tazobactam','piperacillin','piptaz','pip-taz','tazocin']],
+  ['Meropenem',['meropenem','mero']], ['Imipenem',['imipenem']], ['Ertapenem',['ertapenem']],
+  ['Azithromycin',['azithromycin','azith','azithro']], ['Clarithromycin',['clarithromycin','clarith','clari']],
+  ['Erythromycin',['erythromycin']], ['Levofloxacin',['levofloxacin','levoflox']], ['Ciprofloxacin',['ciprofloxacin','cipro']],
+  ['Moxifloxacin',['moxifloxacin','moxi']], ['Metronidazole',['metronidazole','metro','flagyl']],
+  ['Clindamycin',['clindamycin','clinda']], ['Gentamicin',['gentamicin','genta']], ['Amikacin',['amikacin','amika']],
+  ['Vancomycin',['vancomycin','vanco']], ['Doxycycline',['doxycycline','doxy']],
+  ['Cotrimoxazole',['cotrimoxazole','co-trimoxazole','cotri','bactrim']], ['Nitrofurantoin',['nitrofurantoin']],
+  ['Linezolid',['linezolid']], ['Colistin',['colistin']], ['Fluconazole',['fluconazole']],
+  ['Oseltamivir',['oseltamivir','tamiflu']], ['Acyclovir',['acyclovir','aciclovir']], ['Anti-TB (HRZE)',['hrze']],
+];
+const ABX_ALIAS = {};
+ABX_LIST.forEach(([name, aliases]) => aliases.forEach(a => { ABX_ALIAS[a] = name; }));
+let currentAbx = {};
+function localISO(d) { d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// Day N of a course: start day = D1; a stopped course counts through its stop day
+// endTs caps a running course for a discharged patient (counts to discharge, not today)
+function abxDay(m, endTs) { return days(m.start, m.stop ? new Date(m.stop+'T00:00:00').getTime() : endTs) + 1; }
+// written forms of the tracker for the endorsement sheet, abstract and referral
+function abxLine(m, endTs) {
+  const d = abxDay(m, endTs), n = parseInt(m.days) || 0, dose = m.dose ? ' ' + m.dose : '';
+  if (m.stop) return `${m.name}${dose} — ${d} day${d !== 1 ? 's' : ''} (${dayStamp(m.start)} – ${dayStamp(m.stop)}), stopped`;
+  return `${m.name}${dose} — Day ${d}${n ? ' of ' + n : ''} (since ${dayStamp(m.start)})`;
+}
+function abxText(p) { return sortedAbx(p.abx).map(([,m]) => abxLine(m, p.dischargedAt)).join('\n'); }
+// endorsement: same set as the card chips — running courses plus ones stopped in the last 2 days
+function abxCompact(p) {
+  return sortedAbx(p.abx).map(([,m]) => m).filter(m => !m.stop || days(m.stop) <= 2).map(m => {
+    const d = abxDay(m), n = parseInt(m.days) || 0;
+    return m.stop ? `${m.name} ✓${d}d` : `${m.name} D${d}${n ? '/' + n : ''}`;
+  }).join(' · ');
+}
+function abxChipHTML(m) {
+  const d = abxDay(m), n = parseInt(m.days) || 0;
+  if (m.stop) return `<span class="abx-chip done" title="${esc(m.dose||'')} — stopped ${dayStamp(m.stop)}">${esc(m.name)} ✓ ${d}d</span>`;
+  const cls = n && d > n ? ' over' : n && d === n ? ' last' : '';
+  return `<span class="abx-chip${cls}" title="${esc(m.dose||'')} — since ${dayStamp(m.start)}">${esc(m.name)} D${d}${n ? '/' + n : ''}</span>`;
+}
+function sortedAbx(abx) {
+  return Object.entries(abx || {}).sort(([,a],[,b]) => (!!a.stop - !!b.stop) || (a.start||'').localeCompare(b.start||''));
+}
+// card row — running courses, plus ones stopped in the last 2 days so endorsement sees "completed"
+function abxRowHTML(p) {
+  const list = sortedAbx(p.abx).map(([,m]) => m).filter(m => !m.stop || days(m.stop) <= 2);
+  return list.length ? `<div class="card-field"><span class="field-label">ABX</span><span class="field-value" style="white-space:normal">${list.map(abxChipHTML).join('')}</span></div>` : '';
+}
+function abxTextSource(px) {
+  return px === 'r' ? [document.getElementById('r-orders').value, document.getElementById('r-plan').value].join('\n')
+                    : [document.getElementById('f-meds').value, document.getElementById('f-plan').value].join('\n');
+}
+function abxDefaultStart(px) { return px === 'f' ? (document.getElementById('f-date').value || localISO()) : localISO(); }
+// "— Nov 3, 09:15 AM: …" → '2026-11-03' (the year that keeps it from being in the future)
+function stampLineDate(line) {
+  const m = /^—\s*([A-Z][a-z]{2})\s+(\d{1,2})\b/.exec(line.trim()); if (!m) return null;
+  const i = 'JanFebMarAprMayJunJulAugSepOctNovDec'.indexOf(m[1]); if (i < 0 || i % 3) return null;
+  const now = new Date(); let d = new Date(now.getFullYear(), i / 3, +m[2]);
+  if (d > now) d = new Date(now.getFullYear() - 1, i / 3, +m[2]);
+  return localISO(d);
+}
+// Read the orders/plan text top to bottom and work out which antibiotics it starts and stops that
+// the tracker doesn't know about yet. A later D/C cancels an earlier start, so an old dated log
+// doesn't resurface courses that already finished.
+function abxSuggestions(px) {
+  const active = {};   // name -> id of a running course
+  Object.entries(currentAbx).forEach(([id, m]) => { if (!m.stop) active[m.name] = id; });
+  const starts = {}, stops = {};
+  const STOP_RE = /(\bd\/?c\b|\bdiscontinu|\bstop|\bhold\b|\boff\b)/i, SHIFT_RE = /\b(shift|switch|change|step[ -]?down|escalate|de-?escalate)\b/i;
+  const fallback = abxDefaultStart(px);
+  // each clause is judged on its own, so "D/C Ampicillin, start Co-Amox" stops one and starts the other
+  abxTextSource(px).split('\n').flatMap(line => {
+    const date = stampLineDate(line) || fallback;
+    return line.replace(/^\s*—[^:]*:\s*/, '').split(/[,;]|\bthen\b/i).map(body => ({ date, body }));
+  }).forEach(({ date, body }) => {
+    const isStop = STOP_RE.test(body), isShift = SHIFT_RE.test(body);
+    const re = /[a-z][a-z0-9]*(?:-[a-z0-9]+)*/gi; let t; const hits = [];
+    while ((t = re.exec(body))) {
+      const w = t[0].toLowerCase();
+      const name = ABX_ALIAS[w] || ABX_ALIAS[w.replace(/-/g,'')];
+      if (name && !hits.some(h => h.name === name)) hits.push({ name, at: t.index, end: t.index + t[0].length });
+    }
+    hits.forEach((h, i) => {
+      const running = active[h.name] || starts[h.name];
+      if (running && (isStop || isShift)) {
+        if (starts[h.name]) delete starts[h.name]; else stops[h.name] = { id: active[h.name], date };
+      } else if (!running && !isStop) {
+        const seg = body.slice(h.end, hits[i+1] ? hits[i+1].at : undefined);
+        const dm = /(?:x|for)\s*(\d+)\s*(?:d|days?)\b/i.exec(seg);
+        const dose = seg.replace(/(?:x|for)\s*\d+\s*(?:d|days?)\b/i, '').replace(/\b(to|then)\s*$/i, '').replace(/^[\s,:-]+|[\s,.;:-]+$/g, '').trim();
+        starts[h.name] = { name: h.name, dose, start: date, days: dm ? dm[1] : '' };
+        delete stops[h.name];
+      }
+    });
+  });
+  return { starts: Object.values(starts), stops: Object.entries(stops).map(([name, v]) => ({ name, ...v })) };
+}
+function renderAbxEditor(px) {
+  const box = document.getElementById(px + '-abx-list'); if (!box) return;
+  box.innerHTML = sortedAbx(currentAbx).map(([id, m]) => `<div class="abx-row">${abxChipHTML(m)}
+      <span class="abx-meta">${esc(m.dose || '')}${m.dose ? ' · ' : ''}since ${dayStamp(m.start)}${m.stop ? ' · stopped ' + dayStamp(m.stop) : ''}</span>
+      ${m.stop ? `<button type="button" class="btn btn-outline btn-sm" onclick="resumeAbx('${px}','${id}')">↺ Resume</button>`
+               : `<button type="button" class="btn btn-outline btn-sm" onclick="stopAbx('${px}','${id}')">⏹ Stop</button>`}
+      <button type="button" class="btn btn-outline btn-sm" title="Remove — entered by mistake" onclick="removeAbx('${px}','${id}')">×</button>
+    </div>`).join('');
+  renderAbxSuggest(px);
+}
+let lastAbxSuggest = { starts: [], stops: [] };
+function renderAbxSuggest(px) {
+  const box = document.getElementById(px + '-abx-suggest'); if (!box) return;
+  lastAbxSuggest = abxSuggestions(px);
+  box.innerHTML = lastAbxSuggest.starts.map((m, i) => `<button type="button" class="btn btn-outline btn-sm" style="color:#7cc4f5;border-color:#154a6e" onclick="applyAbxSuggest('${px}','start',${i})">＋ Track ${esc(m.name)}${m.dose ? ' ' + esc(m.dose) : ''}${m.days ? ' ×' + esc(m.days) + 'd' : ''} · from ${dayStamp(m.start)}</button>`).join('')
+    + lastAbxSuggest.stops.map((m, i) => `<button type="button" class="btn btn-outline btn-sm" style="color:#fbbf24;border-color:#5a4515" onclick="applyAbxSuggest('${px}','stop',${i})">⏹ Stop ${esc(m.name)} (D${abxDay({ ...currentAbx[m.id], stop: m.date })})</button>`).join('');
+}
+function applyAbxSuggest(px, kind, i) {
+  if (kind === 'start') { const m = lastAbxSuggest.starts[i]; if (m) currentAbx['abx_' + uid()] = m; }
+  else { const m = lastAbxSuggest.stops[i]; if (m && currentAbx[m.id]) currentAbx[m.id] = { ...currentAbx[m.id], stop: m.date }; }
+  renderAbxEditor(px);
+}
+function addAbxManual(px) {
+  const name = document.getElementById(px + '-abx-name').value.trim();
+  if (!name) { showToast('⚠️ Enter the drug name'); return; }
+  currentAbx['abx_' + uid()] = {
+    name: ABX_ALIAS[name.toLowerCase()] || name,
+    dose: document.getElementById(px + '-abx-dose').value.trim(),
+    start: document.getElementById(px + '-abx-start').value || abxDefaultStart(px),
+    days: document.getElementById(px + '-abx-days').value || ''
+  };
+  ['name','dose','start','days'].forEach(k => { document.getElementById(px + '-abx-' + k).value = ''; });
+  renderAbxEditor(px);
+}
+function stopAbx(px, id) { if (currentAbx[id]) currentAbx[id] = { ...currentAbx[id], stop: localISO() }; renderAbxEditor(px); }
+function resumeAbx(px, id) { if (currentAbx[id]) { const m = { ...currentAbx[id] }; delete m.stop; currentAbx[id] = m; } renderAbxEditor(px); }
+function removeAbx(px, id) {
+  if (!confirm('Remove ' + (currentAbx[id]?.name || 'this med') + ' from the tracker? (Use Stop for a finished course.)')) return;
+  delete currentAbx[id]; renderAbxEditor(px);
+}
+function initAbxEditor(px, abx) {
+  currentAbx = JSON.parse(JSON.stringify(abx || {}));
+  const dl = document.getElementById('abx-names');
+  if (dl && !dl.children.length) dl.innerHTML = ABX_LIST.map(([n]) => `<option value="${esc(n)}">`).join('');
+  ['name','dose','start','days'].forEach(k => { document.getElementById(px + '-abx-' + k).value = ''; });
+  renderAbxEditor(px);
+}
+
+/* ===== CARD FIELDS ===== */
+// The running logs — every charting appends a "— date: …" line. Admission-day text gets the same
+// treatment so every order on the card carries a date.
+const LOG_FIELDS = ['ss','labs','meds','plan','remarks'];
+// One card row. Text from the most recent charting (round.fresh, set by chartUpdate) is
+// highlighted until the next New Round, so it's easy to spot at endorsement.
+function cardFieldHTML(p, k, lbl, cls) {
+  let v = (p[k]||'').trim(); if (!v) return '';
+  if (LOG_FIELDS.includes(k) && !v.startsWith('— ')) v = '— ' + dayStamp(p.date) + ': ' + v;
+  const fresh = p.round?.status === 'charted' ? p.round.fresh?.[k] : null;
+  let body;
+  if (fresh === true) body = `<span class="fresh-chart">${esc(expandIfMeds(k, v))}</span>`;
+  else if (typeof fresh === 'string' && v.endsWith(fresh)) {
+    body = esc(expandIfMeds(k, v.slice(0, v.length - fresh.length))) + `<span class="fresh-chart">${esc(expandIfMeds(k, fresh))}</span>`;
+  } else body = esc(expandIfMeds(k, v));
+  return `<div class="card-field${cls||''}"><span class="field-label">${lbl}</span><span class="field-value">${body}</span></div>`;
+}
+// "45 y/o M · 62 kg" — newborns are weighed in grams
+function demoLine(p) {
+  const wt = p.weight ? p.weight + ' kg' : p.nbWeight ? p.nbWeight + ' g' : '';
+  return [[p.age ? p.age + ' ' + ageUnitLabel(p) : '', p.sex || ''].filter(Boolean).join(' '), wt].filter(Boolean).join(' · ');
 }
 
 /* ===== FILTER ===== */
@@ -3138,7 +3379,7 @@ function renderPatients() {
         <div class="card-top">
           <div style="min-width:0">
             <div class="patient-name">${esc(p.name||'Unknown')}</div>
-            <div class="patient-meta">${p.age?p.age+' '+ageUnitLabel(p)+' ':''}${p.sex||''}${(p.age||p.sex)?' · ':''}${fmtDate(p.date)}</div>
+            <div class="patient-meta">${demoLine(p)}${demoLine(p)?' · ':''}${fmtDate(p.date)}</div>
             ${p.priority?'<span class="priority-pill">⚡ PRIORITY</span>':''}${p.mgh?'<span class="mgh-pill">🏠 MGH</span>':''}${p.admitType==='parturient'?'<span class="ob-pill">🤰 PARTURIENT</span>':''}${p.admitType==='newborn'?'<span class="nb-pill">👶 NEWBORN</span>':''}${noHistory?'<span class="no-history-pill">⚠ NO HISTORY</span>':''}
           </div>
           <div class="room-badge ${c}">${esc(p.room||wardMap[p.ward]?.label||'—')}</div>
@@ -3146,13 +3387,14 @@ function renderPatients() {
         ${p.physician?`<div class="card-field"><span class="field-label">MD</span><span class="field-value">${esc(p.physician)}</span></div>`:''}
         ${linkRowHTML(p)}
         ${formatCardRowsHTML(p)}
-        ${p.ss?`<div class="card-field"><span class="field-label">S&S</span><span class="field-value">${esc(p.ss)}</span></div>`:''}
-        ${p.dx?`<div class="card-field dx-current"><span class="field-label">Dx</span><span class="field-value">${esc(p.dx)}</span></div>`:''}
-        ${p.labsOrdered?`<div class="card-field"><span class="field-label">Labs Ord</span><span class="field-value">${esc(p.labsOrdered)}</span></div>`:''}
-        ${p.labs?`<div class="card-field"><span class="field-label">Labs</span><span class="field-value">${esc(p.labs)}</span></div>`:''}
-        ${p.meds?`<div class="card-field"><span class="field-label">Meds/Ord</span><span class="field-value">${esc(expandMeds(p.meds))}</span></div>`:''}
-        ${p.plan?`<div class="card-field"><span class="field-label">Plan</span><span class="field-value">${esc(expandMeds(p.plan))}</span></div>`:''}
-        ${p.remarks?`<div class="card-field"><span class="field-label">Note</span><span class="field-value">${esc(expandMeds(p.remarks))}</span></div>`:''}
+        ${cardFieldHTML(p, 'ss', 'S&S')}
+        ${cardFieldHTML(p, 'dx', 'Dx', ' dx-current')}
+        ${cardFieldHTML(p, 'labsOrdered', 'Labs Ord')}
+        ${cardFieldHTML(p, 'labs', 'Labs')}
+        ${cardFieldHTML(p, 'meds', 'Meds/Ord')}
+        ${abxRowHTML(p)}
+        ${cardFieldHTML(p, 'plan', 'Plan')}
+        ${cardFieldHTML(p, 'remarks', 'Note')}
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏️ Edit</button>
           ${p.admitType==='parturient'?`<button class="btn btn-outline btn-sm" style="color:var(--pedia-c);border-color:#0a3050" onclick="openAdmitNewbornModal('${p.id}')" title="Admit this mother's newborn — the form comes pre-filled from her record">👶 Admit Newborn</button>`:''}
@@ -3205,6 +3447,7 @@ function openAdmitModal() {
   updateMedsPreview('f-plan','f-plan-preview');
   updateMedsPreview('f-remarks','f-remarks-preview');
   initLabsPicker('f', []);
+  initAbxEditor('f', {});
   resetDxPicker('f-admDx');
   resetDxPicker('f-dx');
   scrollModalTop('patient-modal');
@@ -3240,6 +3483,7 @@ function openEditModal(id) {
   updateMedsPreview('f-plan','f-plan-preview');
   updateMedsPreview('f-remarks','f-remarks-preview');
   initLabsPicker('f', p.labsPending || parseLabsOrderedFallback(p.labsOrdered));
+  initAbxEditor('f', p.abx);
   resetDxPicker('f-admDx');
   resetDxPicker('f-dx');
   scrollModalTop('patient-modal');
@@ -3296,6 +3540,7 @@ async function savePatient() {
     priority: document.getElementById('f-priority').checked,
     mgh: document.getElementById('f-mgh').checked,
     admitType: currentAdmitType,
+    abx: currentAbx,
     updatedAt: Date.now()
   };
   // Obstetric / newborn format fields — only the relevant set is stored, so switching a record's
@@ -3322,6 +3567,10 @@ async function savePatient() {
     // Snapshot the admitting orders so the original Doctor's Order can be reviewed/printed later,
     // even after diet/ivf/meds/etc change during daily rounds
     ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([live,snap]) => { data[snap] = data[live]; });
+    // date the admission entries the same way rounds entries are dated (after the snapshot, so the
+    // printed Doctor's Order stays clean); a backdated admit gets its admission day, not today's time
+    const when = data.date === new Date().toISOString().split('T')[0] ? stamp() : dayStamp(data.date);
+    LOG_FIELDS.forEach(k => { if (data[k]) data[k] = appendStamped('', data[k], when); });
   } else {
     const old = patients[existingId] || {};
     if (old.admittedAt) data.admittedAt = old.admittedAt;
@@ -3466,7 +3715,7 @@ function buildPreviewHTML(hospital) {
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong style="color:var(--text)">'+esc(p.dx)+'</strong>':''}${p.dx&&p.ss?'<br>':''}${p.ss?'<span style="font-size:11px">'+esc(p.ss)+'</span>':''}</td>
         <td style="font-size:11px">${labsCellHTML(p)}</td>
-        <td style="font-size:11px">${esc(expandMeds(p.meds)||'—')}</td>
+        <td style="font-size:11px">${esc(expandMeds(p.meds)||'—')}${abxCompact(p)?'<br><strong style="color:#7cc4f5">ABX: '+esc(abxCompact(p))+'</strong>':''}</td>
         <td style="font-size:11px">${p.plan?esc(expandMeds(p.plan)):''}${p.plan&&p.remarks?'<br>':''}${p.remarks?'<em>'+esc(expandMeds(p.remarks))+'</em>':''}</td>
       </tr>`;
     });
@@ -3516,7 +3765,7 @@ function doPrint() {
         <td>${fmtDate(p.date)}</td>
         <td>${p.dx?'<strong>'+esc(p.dx)+'</strong>':''}${p.ss?'<br>'+esc(p.ss):''}</td>
         <td>${labsCellHTML(p)}</td>
-        <td>${esc(expandMeds(p.meds)||'—')}</td>
+        <td>${esc(expandMeds(p.meds)||'—')}${abxCompact(p)?'<br><strong>ABX: '+esc(abxCompact(p))+'</strong>':''}</td>
         <td>${esc(expandMeds(p.plan)||'')}${p.remarks?'<br><em>'+esc(expandMeds(p.remarks))+'</em>':''}</td>
       </tr>`;
     });
@@ -3587,7 +3836,8 @@ async function printAbstract() {
 
   const histRows = HISTORY_FIELDS.map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(p[k])}</div></div>` : '').join('');
   const chartRows = [['ss','Signs & Symptoms'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
-    .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(expandIfMeds(k,p[k]))}</div></div>` : '').join('');
+    .map(([k,label]) => p[k] ? `<div class="abs-field"><div class="abs-label">${label}</div><div class="abs-value">${esc(expandIfMeds(k,p[k]))}</div></div>` : '').join('')
+    + (abxText(p) ? `<div class="abs-field"><div class="abs-label">Antibiotics / Tracked Meds</div><div class="abs-value">${esc(abxText(p))}</div></div>` : '');
 
   const body = `
     <div class="abs-header">
@@ -3844,6 +4094,7 @@ function buildReferralPreview() {
   lines = lines.concat(section('Clinical Chart',
     [['ss','Signs & Symptoms'],['dx','Working Diagnosis'],['labsOrdered','Labs Ordered/Pending'],['labs','Lab Results'],['meds','Medications/Orders'],['plan','Plan'],['remarks','Remarks']]
       .map(([k,label]) => p[k] ? (label + ':\n' + expandIfMeds(k,p[k])) : '')
+      .concat(abxText(p) ? ['Antibiotics / Tracked Meds:\n' + abxText(p)] : [])
   ));
 
   lines = lines.concat(section('Latest Findings (at Referral)', [
