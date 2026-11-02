@@ -2411,30 +2411,67 @@ function calcObDates() {
 
 // The one-line diagnosis a parturient/newborn chart opens with, assembled from the format
 // fields so nobody has to retype the same sentence every delivery.
+// "G2P2 (2002)" — TPAL is written as four digits in parentheses, however it was typed ("2-0-0-2")
+function obScoreDx(d) {
+  if (!d.obG) return '';
+  const tpal = String(d.obTpal || '').replace(/[^0-9]/g, '');
+  return 'G' + d.obG + (d.obP !== undefined && d.obP !== '' ? 'P' + d.obP : '') + (tpal ? ' (' + tpal + ')' : '');
+}
+// "Live Term Baby Boy" — a newborn record as the mother's diagnosis names it
+function babyDx(b) {
+  return ['Live', b.nbMaturity, 'Baby', b.sex === 'Male' ? 'Boy' : b.sex === 'Female' ? 'Girl' : ''].filter(Boolean).join(' ');
+}
+// Philippine maternal diagnosis convention:
+//   G2P2 (2002), Pregnancy Uterine 38 2/7 weeks AOG, delivered via NSD to a Live Term Baby Boy
+//   G1P1 (1001), Pregnancy Uterine 39 weeks AOG, delivered via CS secondary to CPD to a Live Term Baby Girl
+//   G2P1 (1001), Pregnancy Uterine 38 weeks AOG, in labor
+// d is the mother's OB fields; babies are her linked newborn records (twins = two of them).
+function composeObDx(d, babies) {
+  if (!d.obG && !d.obAog && !d.obDelivery) return '';   // nothing obstetric yet — no content-free line
+  const del = (d.obDelivery || '').replace(/\s*\(.*\)/,'').replace(/^Assisted — /,'');
+  const parts = [obScoreDx(d), 'Pregnancy Uterine' + (d.obAog ? ' ' + d.obAog + (/\baog\b/i.test(d.obAog) ? '' : ' AOG') : '')];
+  if (/abortion/i.test(del)) parts.push('Abortion');
+  else if (!del || /not yet/i.test(del)) parts.push('in labor');
+  else {
+    let line = 'delivered via ' + del + (d.obIndication ? ' secondary to ' + d.obIndication : '');
+    if (babies && babies.length) line += ' to ' + babies.map(b => 'a ' + babyDx(b)).join(' and ');
+    parts.push(line);
+    // an intact perineum isn't news; a laceration / episiotomy is
+    if (d.obPerineum && !/intact/i.test(d.obPerineum)) parts.push((/^with\b/i.test(d.obPerineum) ? '' : 'with ') + d.obPerineum);
+  }
+  return parts.filter(Boolean).join(', ');
+}
+function linkedBabies(motherId) { return motherId ? Object.values(patients).filter(b => b.motherId === motherId) : []; }
+
 function composeFormatDx() {
   const v = id => (document.getElementById(id)?.value || '').trim();
   let line = '';
   if (currentAdmitType === 'parturient') {
-    // nothing obstetric entered yet — don't write a content-free "Pregnancy Uterine, in labor"
-    if (!v('f-obG') && !v('f-obAog') && !v('f-obDelivery')) return '';
-    const score = v('f-obG') ? 'G' + v('f-obG') + (v('f-obP') ? 'P' + v('f-obP') : '') + (v('f-obTpal') ? ' (' + v('f-obTpal') + ')' : '') : '';
-    const del = v('f-obDelivery');
-    const delivered = del && !/not yet/i.test(del);
-    const parts = [score, 'Pregnancy Uterine' + (v('f-obAog') ? ' ' + v('f-obAog') + ' AOG' : '')];
-    parts.push(delivered ? 'delivered via ' + del.replace(/\s*\(.*\)/,'') : 'in labor');
-    if (v('f-obIndication')) parts.push('secondary to ' + v('f-obIndication'));
-    line = parts.filter(Boolean).join(', ');
+    const d = {}; OB_FIELDS.forEach(k => { d[k] = v('f-' + k); });
+    line = composeObDx(d, linkedBabies(v('edit-id')));
   } else if (currentAdmitType === 'newborn') {
     if (!['f-nbMaturity','f-nbWeight','f-nbApgar1','f-nbApgar5','f-nbAog','f-nbGrowth','f-nbDelivery','f-nbMotherName'].some(v)) return '';
+    // Philippine newborn diagnosis convention:
+    //   Live Term Baby Boy, delivered via NSD to a 25-year-old G2P2 (2002) mother,
+    //   BW 3100 g, AS 8,9, BS 38 weeks, AGA
     const sex = v('f-sex');
-    const baby = [v('f-nbMaturity'), 'live baby', sex === 'Male' ? 'boy' : sex === 'Female' ? 'girl' : ''].filter(Boolean).join(' ');
-    const parts = [baby];
-    if (v('f-nbAog')) parts.push(v('f-nbAog'));
-    if (v('f-nbGrowth')) parts.push(v('f-nbGrowth').replace(/\s*\(.*\)/,''));
+    const baby = babyDx({ nbMaturity: v('f-nbMaturity'), sex });
+    // the mother's age and G/P score come from her linked record, when there is one
+    const mom = patients[v('f-motherId')];
+    const momAge = mom?.age && mom.ageUnit !== 'mo' ? mom.age + '-year-old' : '';
+    const momScore = mom ? obScoreDx(mom) : '';
+    const del = v('f-nbDelivery').replace(/\s*\(.*\)/,'').replace(/^Assisted — /,'');
+    let head = baby;
+    if (del) head += ', delivered via ' + del;
+    if (momAge || momScore) head += (del ? ' to ' : ', born to ') + 'a ' + [momAge, momScore].filter(Boolean).join(' ') + ' mother';
+    const parts = [head];
     if (v('f-nbWeight')) parts.push('BW ' + v('f-nbWeight') + ' g');
-    if (v('f-nbApgar1') || v('f-nbApgar5')) parts.push('APGAR ' + (v('f-nbApgar1')||'—') + '/' + (v('f-nbApgar5')||'—'));
-    if (v('f-nbDelivery')) parts.push('delivered via ' + v('f-nbDelivery').replace(/\s*\(.*\)/,''));
-    if (v('f-nbMotherName')) parts.push('to ' + v('f-nbMotherName'));
+    if (v('f-nbApgar1') || v('f-nbApgar5')) parts.push('AS ' + (v('f-nbApgar1')||'—') + ',' + (v('f-nbApgar5')||'—'));
+    // AOG by Ballard is written as the Ballard Score ("BS 38 weeks"); anything else stays as AOG
+    const aog = v('f-nbAog');
+    if (aog) parts.push(/ballard/i.test(aog) ? 'BS ' + aog.replace(/\s*(by\s+)?(new\s+)?ballard(\s+score)?/i,'').trim()
+                                             : (/\baog\b/i.test(aog) ? aog : 'AOG ' + aog));
+    if (v('f-nbGrowth')) parts.push(v('f-nbGrowth').replace(/\s*\(.*\)/,''));
     line = parts.filter(Boolean).join(', ');
   }
   return line;
@@ -3578,12 +3615,26 @@ async function savePatient() {
     ADMIT_ORDER_SNAPSHOT_PAIRS.forEach(([,snap]) => { if (old[snap]) data[snap] = old[snap]; });
   }
   await db.ref('patients/'+id).set(data);
+  if (data.motherId) await syncMotherDx(data.motherId, id, data);
   closeModal();
   // A newly admitted patient can silently fail to appear if a ward tab, search text, or a
   // Priority/Today/Doctor filter from earlier browsing is still active — reset the view so the
   // freshly saved patient is always visible without needing a page refresh.
   if (!existingId) resetCensusFilters();
   showToast(existingId ? '✓ Patient updated' : '✓ Patient admitted');
+}
+
+// The mother's admitting dx names her baby, but the baby is admitted after her. If her dx is still
+// the auto-built line (with or without this baby), rebuild it now; a hand-edited dx is left alone.
+async function syncMotherDx(motherId, babyId, baby) {
+  const mom = patients[motherId]; if (!mom || mom.admitType !== 'parturient') return;
+  const others = Object.entries(patients).filter(([bid, b]) => b.motherId === motherId && bid !== babyId).map(([, b]) => b);
+  const before = composeObDx(mom, others), withBaby = composeObDx(mom, [...others, baby]);
+  const cur = (mom.admDx || '').trim();
+  if (!withBaby || cur === withBaby || (cur && cur !== before && cur !== composeObDx(mom, linkedBabies(motherId)))) return;
+  const upd = { admDx: withBaby };
+  if ((mom.dx || '').trim() === cur) upd.dx = withBaby;   // working dx still the admitting one — keep in step
+  await db.ref('patients/' + motherId).update(upd);
 }
 
 function resetCensusFilters() {
