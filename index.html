@@ -246,6 +246,8 @@ if ('serviceWorker' in navigator) {
   .abx-meta{font-size:12px;color:var(--text2);flex:1;min-width:120px}
   .abx-add{display:grid;grid-template-columns:1.2fr 1.6fr 1.1fr .6fr auto;gap:6px}
   @media(max-width:560px){.abx-add{grid-template-columns:1fr 1fr}}
+  .abx-add > *{min-width:0}
+  .abx-hint{font-size:11px;color:var(--text3);margin-top:4px}
   .abx-suggest:empty{display:none}
   .abx-suggest{margin-bottom:6px}
   .abx-suggest .btn{margin:0 6px 6px 0;font-size:12px;white-space:normal;text-align:left}
@@ -313,6 +315,35 @@ if ('serviceWorker' in navigator) {
     input,select,textarea{font-size:16px}
   }
   @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid,#history-pe-section,#soap-section,#ob-section,#nb-section{grid-template-columns:1fr}.patients-grid{grid-template-columns:1fr}}
+
+  /* Save / Cancel stay pinned to the bottom of every form instead of waiting past the last field */
+  .modal-footer{position:sticky;bottom:0;z-index:1}
+  /* a grid track's default min-width is its content, so one long ICD-10 chip pushed every field in
+     the form past the right edge on a phone — let fields shrink to the screen instead */
+  .form-grid > *, .form-group{min-width:0}
+  .modal{overflow-x:hidden}
+
+  /* ===== iPhone-size layout ===== */
+  @media(max-width:640px){
+    /* forms take the whole screen: no floating box, no page peeking around it */
+    .modal-overlay{padding:0;align-items:stretch}
+    .modal{max-width:none;max-height:none;height:100%;border-radius:0;border:none}
+    .modal-header,.modal-footer{border-radius:0}
+    .modal-footer{flex-wrap:wrap;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+    .modal-footer .btn{flex:1;justify-content:center}
+    /* the ICD-10 list appears once you start typing a search, not as a wall of chips under the dx */
+    input[id^="dxsearch-"]:placeholder-shown + .dx-picker-box{display:none}
+    .labs-picker-box{max-height:190px}
+    /* census tiles: a compact strip instead of a full screen of boxes */
+    .stats-bar{grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+    .stat-card{padding:7px 10px}
+    .stat-label{font-size:9px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stat-value{font-size:19px}
+    /* rounds cards: History / Add Notes / Charted sit right under the name, not after the whole chart */
+    #rounds-container .patient-card{display:flex;flex-direction:column}
+    #rounds-container .patient-card > .card-top{order:-2}
+    #rounds-container .patient-card > .card-actions{order:-1;margin:2px 0 10px;border-top:none;padding-top:0;border-bottom:1px solid var(--border);padding-bottom:10px}
+  }
 </style>
 </head>
 <body>
@@ -824,6 +855,7 @@ if ('serviceWorker' in navigator) {
             <input type="number" id="f-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
             <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('f')">＋ Add</button>
           </div>
+          <div class="abx-hint">Date = start day (Day 1). Leave it blank for the admission date.</div>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
@@ -1244,6 +1276,7 @@ if ('serviceWorker' in navigator) {
             <input type="number" id="r-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
             <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('r')">＋ Add</button>
           </div>
+          <div class="abx-hint">Date = start day (Day 1). Leave it blank for today.</div>
         </div>
         <div class="form-group full">
           <label>New Plan</label>
