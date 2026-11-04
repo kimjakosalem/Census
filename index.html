@@ -247,6 +247,12 @@ if ('serviceWorker' in navigator) {
   .abx-add{display:grid;grid-template-columns:1.2fr 1.6fr 1.1fr .6fr auto;gap:6px}
   @media(max-width:560px){.abx-add{grid-template-columns:1fr 1fr}}
   .abx-add > *{min-width:0}
+  /* card logs: older entries folded behind a toggle */
+  .older-entries summary{list-style:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--accent);user-select:none;width:max-content;padding:1px 0 3px}
+  .older-entries summary::-webkit-details-marker{display:none}
+  .older-entries .when-open,.older-entries[open] .when-closed{display:none}
+  .older-entries[open] .when-open{display:inline}
+  .older-entries[open]{color:var(--text3)}
   .abx-hint{font-size:11px;color:var(--text3);margin-top:4px}
   .abx-suggest:empty{display:none}
   .abx-suggest{margin-bottom:6px}
@@ -294,6 +300,7 @@ if ('serviceWorker' in navigator) {
   .print-footer-note{font-size:11px;color:var(--text3);margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
 
   .btn .btn-label-full{display:inline}
+  .btn .btn-label-short{display:none}
   @media(max-width:900px){.stats-bar{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:640px){
     header{height:auto;padding:10px 14px;flex-wrap:wrap;gap:8px;align-items:flex-start}
@@ -301,7 +308,19 @@ if ('serviceWorker' in navigator) {
     .logo-icon{width:30px;height:30px}
     .header-right{width:100%;gap:8px;justify-content:flex-start}
     .header-right .status-text{display:none}
-    .btn .btn-label-full{display:none}   /* collapse buttons to emoji on phones */
+    .btn .btn-label-full{display:none}   /* phones get the short label instead of the full one */
+    .btn .btn-label-short{display:inline;margin-left:4px}
+    /* header: one row of equal tiles, icon over a one-word label, so every button says what it does */
+    .header-right{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+    .header-right .status-dot{position:absolute;top:14px;right:16px}
+    .header-right .btn{flex-direction:column;gap:2px;padding:6px 2px;font-size:16px;line-height:1.1;min-width:0}
+    .header-right .btn .btn-label-short{margin-left:0;font-size:10px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+    .search-box{flex:1 1 100%}
+    /* toolbars: search and ward tabs get the full width, the filter buttons share one row under them */
+    .toolbar > div{flex:1 1 100%}
+    .toolbar .filter-tabs{width:100%}
+    .toolbar .btn-sm{padding:7px 11px}
+    #rounds-view .toolbar > .btn{width:100%;justify-content:center}
     .btn{padding:8px 12px}
     main{padding:16px 12px}
     .modal-overlay{padding:10px}
@@ -397,12 +416,12 @@ if ('serviceWorker' in navigator) {
       <span class="status-text" id="doctor-name" style="font-weight:600;color:var(--text)"></span>
       <div class="status-dot" id="conn-dot"></div>
       <span class="status-text" id="conn-text">Connecting...</span>
-      <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-full"> Print Endorsement</span></button>
-      <button class="btn btn-outline btn-sm" id="rounds-toggle" onclick="toggleRoundsView()" title="Rounds Mode">🩺<span class="btn-label-full"> Rounds</span></button>
-      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Archive">🗄️<span class="btn-label-full"> Archive</span></button>
-      <button class="btn btn-outline btn-sm" id="medabbrev-toggle" onclick="openMedAbbrevModal()" title="Medication Abbreviations">💊<span class="btn-label-full"> Med Abbrev.</span></button>
-      <button class="btn btn-primary" onclick="openAdmitModal()" title="Admit Patient">+<span class="btn-label-full"> Admit Patient</span></button>
-      <button class="btn btn-outline btn-sm" onclick="doLogout()" title="Sign Out">🔒<span class="btn-label-full"> Sign Out</span></button>
+      <button class="btn btn-green btn-sm" onclick="openPrintPreview()" title="Print Endorsement">🖨️<span class="btn-label-short">Endorse</span><span class="btn-label-full"> Print Endorsement</span></button>
+      <button class="btn btn-outline btn-sm" id="rounds-toggle" onclick="toggleRoundsView()" title="Rounds Mode">🩺<span class="btn-label-short">Rounds</span><span class="btn-label-full"> Rounds</span></button>
+      <button class="btn btn-outline btn-sm" id="discharged-toggle" onclick="toggleDischargedView()" title="Archive">🗄️<span class="btn-label-short">Archive</span><span class="btn-label-full"> Archive</span></button>
+      <button class="btn btn-outline btn-sm" id="medabbrev-toggle" onclick="openMedAbbrevModal()" title="Medication Abbreviations">💊<span class="btn-label-short">Abbrev</span><span class="btn-label-full"> Med Abbrev.</span></button>
+      <button class="btn btn-primary" onclick="openAdmitModal()" title="Admit Patient">+<span class="btn-label-short">Admit</span><span class="btn-label-full"> Admit Patient</span></button>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()" title="Sign Out">🔒<span class="btn-label-short">Sign out</span><span class="btn-label-full"> Sign Out</span></button>
     </div>
   </header>
 
@@ -441,9 +460,9 @@ if ('serviceWorker' in navigator) {
           <div class="tab" data-w="OBS" onclick="setFilter('OBS',this)">OBS</div>
           <div class="tab" data-w="OB" onclick="setFilter('OB',this)">OB Ward</div>
         </div>
-        <button class="btn btn-outline btn-sm" id="priority-toggle" onclick="togglePriorityOnly()" title="Show only priority/critical patients across all wards">⚡<span class="btn-label-full"> Priority Only</span></button>
-        <button class="btn btn-outline btn-sm" id="mgh-toggle" onclick="toggleMghOnly()" title="Show only patients flagged MGH — may go home / cleared for discharge">🏠<span class="btn-label-full"> MGH Only</span></button>
-        <button class="btn btn-outline btn-sm" id="today-toggle" onclick="toggleTodayOnly()" title="Show only patients admitted this shift (9am–9am)">🌅<span class="btn-label-full"> Today's Admissions</span></button>
+        <button class="btn btn-outline btn-sm" id="priority-toggle" onclick="togglePriorityOnly()" title="Show only priority/critical patients across all wards">⚡<span class="btn-label-short">Priority</span><span class="btn-label-full"> Priority Only</span></button>
+        <button class="btn btn-outline btn-sm" id="mgh-toggle" onclick="toggleMghOnly()" title="Show only patients flagged MGH — may go home / cleared for discharge">🏠<span class="btn-label-short">MGH</span><span class="btn-label-full"> MGH Only</span></button>
+        <button class="btn btn-outline btn-sm" id="today-toggle" onclick="toggleTodayOnly()" title="Show only patients admitted this shift (9am–9am)">🌅<span class="btn-label-short">Today</span><span class="btn-label-full"> Today's Admissions</span></button>
         <select id="doctor-filter" class="btn-outline btn-sm" style="padding:8px 12px;border-radius:8px;cursor:pointer" onchange="setDoctorFilter(this.value)" title="Sort/filter by admitting physician">
           <option value="all">👤 All Physicians</option>
         </select>
@@ -468,7 +487,7 @@ if ('serviceWorker' in navigator) {
           <input type="text" id="discharged-search" placeholder="Search discharged name, bed, diagnosis..." oninput="onSearchInput('discharged-search',renderDischarged)">
           <button type="button" class="clear-btn" title="Clear search" onclick="clearSearch('discharged-search',renderDischarged)">×</button>
         </div>
-        <button type="button" class="btn btn-outline btn-sm" onclick="searchFullArchive()" title="Search every archived patient ever discharged, not just the most recent 300">🔎<span class="btn-label-full"> Search Full Archive</span></button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="searchFullArchive()" title="Search every archived patient ever discharged, not just the most recent 300">🔎<span class="btn-label-short">Full archive</span><span class="btn-label-full"> Search Full Archive</span></button>
         <div style="font-size:12px;color:var(--text3)" id="discharged-count"></div>
       </div>
       <div id="discharged-container"></div>
@@ -498,9 +517,9 @@ if ('serviceWorker' in navigator) {
             <div class="tab" data-w="OBS" onclick="setRoundsFilter('OBS',this)">OBS</div>
             <div class="tab" data-w="OB" onclick="setRoundsFilter('OB',this)">OB Ward</div>
           </div>
-          <button class="btn btn-outline btn-sm" id="uncharted-toggle" onclick="toggleUnchartedOnly()" title="Show only patients still pending, not yet marked Charted">🆕<span class="btn-label-full"> Uncharted Only</span></button>
-          <button class="btn btn-outline btn-sm" id="rounds-priority-toggle" onclick="toggleRoundsPriorityOnly()" title="Round on the priority/critical patients first — show only them">⚡<span class="btn-label-full"> Priority Only</span></button>
-          <button class="btn btn-outline btn-sm" id="rounds-mgh-toggle" onclick="toggleRoundsMghOnly()" title="Show only patients flagged May Go Home">🏠<span class="btn-label-full"> MGH Only</span></button>
+          <button class="btn btn-outline btn-sm" id="uncharted-toggle" onclick="toggleUnchartedOnly()" title="Show only patients still pending, not yet marked Charted">🆕<span class="btn-label-short">Pending</span><span class="btn-label-full"> Uncharted Only</span></button>
+          <button class="btn btn-outline btn-sm" id="rounds-priority-toggle" onclick="toggleRoundsPriorityOnly()" title="Round on the priority/critical patients first — show only them">⚡<span class="btn-label-short">Priority</span><span class="btn-label-full"> Priority Only</span></button>
+          <button class="btn btn-outline btn-sm" id="rounds-mgh-toggle" onclick="toggleRoundsMghOnly()" title="Show only patients flagged May Go Home">🏠<span class="btn-label-short">MGH</span><span class="btn-label-full"> MGH Only</span></button>
         </div>
         <button class="btn btn-outline btn-sm" onclick="startNewRound()">🔄 Start New Round</button>
       </div>
@@ -3282,15 +3301,29 @@ function initAbxEditor(px, abx) {
 const LOG_FIELDS = ['ss','labs','meds','plan','remarks'];
 // One card row. Text from the most recent charting (round.fresh, set by chartUpdate) is
 // highlighted until the next New Round, so it's easy to spot at endorsement.
+// A running log shows only its latest entry (or the whole highlighted charting); the older entries
+// fold into a "▸ N earlier" toggle so a long stay doesn't turn the card into the whole chart.
 function cardFieldHTML(p, k, lbl, cls) {
   let v = (p[k]||'').trim(); if (!v) return '';
-  if (LOG_FIELDS.includes(k) && !v.startsWith('— ')) v = '— ' + dayStamp(p.date) + ': ' + v;
+  const isLog = LOG_FIELDS.includes(k);
+  if (isLog && !v.startsWith('— ')) v = '— ' + dayStamp(p.date) + ': ' + v;
   const fresh = p.round?.status === 'charted' ? p.round.fresh?.[k] : null;
   let body;
   if (fresh === true) body = `<span class="fresh-chart">${esc(expandIfMeds(k, v))}</span>`;
-  else if (typeof fresh === 'string' && v.endsWith(fresh)) {
-    body = esc(expandIfMeds(k, v.slice(0, v.length - fresh.length))) + `<span class="fresh-chart">${esc(expandIfMeds(k, fresh))}</span>`;
-  } else body = esc(expandIfMeds(k, v));
+  else {
+    const freshTail = typeof fresh === 'string' && v.endsWith(fresh);
+    // split point: where the highlighted charting starts, else the start of the last dated entry
+    // (an entry runs until the next "— date:" line, so multi-line entries stay whole)
+    const cut = freshTail ? v.length - fresh.length : isLog ? v.lastIndexOf('\n— ') + 1 : 0;
+    const head = v.slice(0, cut).trim(), tail = v.slice(cut);
+    const tailHTML = freshTail ? `<span class="fresh-chart">${esc(expandIfMeds(k, tail))}</span>` : esc(expandIfMeds(k, tail));
+    if (!head) body = tailHTML;
+    else if (!isLog) body = esc(expandIfMeds(k, head)) + '\n' + tailHTML;
+    else {
+      const n = (head.match(/(^|\n)— /g) || []).length || 1;
+      body = `<details class="older-entries" onclick="event.stopPropagation()"><summary><span class="when-closed">▸ ${n} earlier entr${n === 1 ? 'y' : 'ies'}</span><span class="when-open">▾ Hide earlier</span></summary>${esc(expandIfMeds(k, head))}</details>${tailHTML}`;
+    }
+  }
   return `<div class="card-field${cls||''}"><span class="field-label">${lbl}</span><span class="field-value">${body}</span></div>`;
 }
 // "45 y/o M · 62 kg" — newborns are weighed in grams
