@@ -870,11 +870,11 @@ if ('serviceWorker' in navigator) {
           <div class="abx-add">
             <input type="text" id="f-abx-name" list="abx-names" placeholder="Drug">
             <input type="text" id="f-abx-dose" placeholder="Dose / route / freq">
-            <input type="date" id="f-abx-start" title="Start date (Day 1) — blank = admission date">
+            <input type="date" id="f-abx-start" title="Start date (D0) — blank = admission date">
             <input type="number" id="f-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
             <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('f')">＋ Add</button>
           </div>
-          <div class="abx-hint">Date = start day (Day 1). Leave it blank for the admission date.</div>
+          <div class="abx-hint">Date = start day (D0). Leave it blank for the admission date.</div>
         </div>
         <div class="form-group full">
           <div class="label-row"><label>Plan</label><button type="button" class="btn btn-outline btn-sm" tabindex="-1" onclick="copyHistoryField('f-plan')">📋 Copy</button></div>
@@ -1291,11 +1291,11 @@ if ('serviceWorker' in navigator) {
           <div class="abx-add">
             <input type="text" id="r-abx-name" list="abx-names" placeholder="Drug">
             <input type="text" id="r-abx-dose" placeholder="Dose / route / freq">
-            <input type="date" id="r-abx-start" title="Start date (Day 1) — blank = today">
+            <input type="date" id="r-abx-start" title="Start date (D0) — blank = today">
             <input type="number" id="r-abx-days" min="1" placeholder="Days" title="Planned duration in days (optional)">
             <button type="button" class="btn btn-outline btn-sm" onclick="addAbxManual('r')">＋ Add</button>
           </div>
-          <div class="abx-hint">Date = start day (Day 1). Leave it blank for today.</div>
+          <div class="abx-hint">Date = start day (D0). Leave it blank for today.</div>
         </div>
         <div class="form-group full">
           <label>New Plan</label>
@@ -3142,7 +3142,7 @@ function dayStamp(d) {
 
 /* ===== ANTIBIOTIC / MED DAY TRACKER =====
    p.abx = { <id>: { name, dose, start:'YYYY-MM-DD', days:<planned count or ''>, stop?:'YYYY-MM-DD' } }
-   The start day is Day 1. Forms edit a working copy (currentAbx): the admit/edit form saves it with
+   The start day is D0. Forms edit a working copy (currentAbx): the admit/edit form saves it with
    the record, the rounds modal saves it straight away like ward/MGH — it's a live tracker, not a note.
    Antibiotics named in the orders/plan text are offered as one-tap Track / Stop suggestions. */
 const ABX_LIST = [
@@ -3167,13 +3167,14 @@ const ABX_ALIAS = {};
 ABX_LIST.forEach(([name, aliases]) => aliases.forEach(a => { ABX_ALIAS[a] = name; }));
 let currentAbx = {};
 function localISO(d) { d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-// Day N of a course: start day = D1; a stopped course counts through its stop day
+// Day N of a course, ward style: the start day is D0 (doses still being completed), the next
+// calendar day D1 — so D7 is the 7th full day. A stopped course shows the day it stopped on.
 // endTs caps a running course for a discharged patient (counts to discharge, not today)
-function abxDay(m, endTs) { return days(m.start, m.stop ? new Date(m.stop+'T00:00:00').getTime() : endTs) + 1; }
+function abxDay(m, endTs) { return days(m.start, m.stop ? new Date(m.stop+'T00:00:00').getTime() : endTs); }
 // written forms of the tracker for the endorsement sheet, abstract and referral
 function abxLine(m, endTs) {
   const d = abxDay(m, endTs), n = parseInt(m.days) || 0, dose = m.dose ? ' ' + m.dose : '';
-  if (m.stop) return `${m.name}${dose} — ${d} day${d !== 1 ? 's' : ''} (${dayStamp(m.start)} – ${dayStamp(m.stop)}), stopped`;
+  if (m.stop) return `${m.name}${dose} — stopped on D${d} (${dayStamp(m.start)} – ${dayStamp(m.stop)})`;
   return `${m.name}${dose} — Day ${d}${n ? ' of ' + n : ''} (since ${dayStamp(m.start)})`;
 }
 function abxText(p) { return sortedAbx(p.abx).map(([,m]) => abxLine(m, p.dischargedAt)).join('\n'); }
@@ -3181,12 +3182,12 @@ function abxText(p) { return sortedAbx(p.abx).map(([,m]) => abxLine(m, p.dischar
 function abxCompact(p) {
   return sortedAbx(p.abx).map(([,m]) => m).filter(m => !m.stop || days(m.stop) <= 2).map(m => {
     const d = abxDay(m), n = parseInt(m.days) || 0;
-    return m.stop ? `${m.name} ✓${d}d` : `${m.name} D${d}${n ? '/' + n : ''}`;
+    return m.stop ? `${m.name} ✓D${d}` : `${m.name} D${d}${n ? '/' + n : ''}`;
   }).join(' · ');
 }
 function abxChipHTML(m) {
   const d = abxDay(m), n = parseInt(m.days) || 0;
-  if (m.stop) return `<span class="abx-chip done" title="${esc(m.dose||'')} — stopped ${dayStamp(m.stop)}">${esc(m.name)} ✓ ${d}d</span>`;
+  if (m.stop) return `<span class="abx-chip done" title="${esc(m.dose||'')} — stopped ${dayStamp(m.stop)}">${esc(m.name)} ✓ D${d}</span>`;
   const cls = n && d > n ? ' over' : n && d === n ? ' last' : '';
   return `<span class="abx-chip${cls}" title="${esc(m.dose||'')} — since ${dayStamp(m.start)}">${esc(m.name)} D${d}${n ? '/' + n : ''}</span>`;
 }
