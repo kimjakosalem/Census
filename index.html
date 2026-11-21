@@ -2327,6 +2327,7 @@ function renderRounds() {
           <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${p.id}')">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openRoundsModal('${p.id}')">➕ ${st==='pending'?'Edit':'Add'} Notes</button>
           ${st==='pending'?`<button class="btn btn-green btn-sm" onclick="markCharted('${p.id}')">✓ Charted</button>`:''}
+          <button class="btn btn-danger btn-sm" onclick="promptDischarge('${p.id}','${esc(p.name||'')}')">🚪 Discharge</button>
         </div>
       </div>`;
     });
@@ -3734,7 +3735,8 @@ function dateToTs(dateStr, existingTs) {
 function promptDischarge(id, name) {
   dischargeId = id;
   const p = patients[id] || {};
-  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to the Archive and can be re-admitted from there at any time.`;
+  document.getElementById('discharge-text').textContent = `Discharge "${name}" from the active census? They'll move to the Archive and can be re-admitted from there at any time.`
+    + (p.round?.status === 'pending' ? ' ⚠️ They still have rounds notes that are not yet charted.' : '');
   document.getElementById('dis-date').value = localDateStr(Date.now());
   const sel = document.getElementById('dis-disposition');
   sel.innerHTML = DISPOSITION_OPTIONS.map(o => `<option>${o}</option>`).join('') + '<option value="Other">Other (specify)</option>';
